@@ -66,22 +66,21 @@ Appen visar ett fel om lagringen misslyckas.
 | `src/storage/localRepository.js`    | Lokal lagring bakom ett separat gränssnitt     |
 | `src/hooks/useDevice.js`            | Tema, klocka och skärmlås                      |
 
-## Nästa steg: Firebase
+## Firebase
 
-Firebase ingår inte i den här ändringen.
-Inloggning, molnlagring och delning är ännu inte aktiverade.
+Appen använder Google-inloggning och Firestore när ett konto är inloggat.
+Följ [Firebase-guiden](docs/FIREBASE.md) innan du aktiverar versionen.
+Guiden beskriver Google-inloggning, tillåtna domäner, databas, säkerhetsregler och App Check.
+App Check kräver en offentlig reCAPTCHA Enterprise-webbplatsnyckel innan molnlagringen startar.
+Aktivera även tjänsternas App Check-kontroll i Firebase efter verifierad testning.
 
-Börja med att definiera hushåll, medlemmar och deras behörigheter.
-Lägg sedan till Firebase Authentication och Firestore med tillhörande säkerhetsregler.
-Byt lagringsdelen via `read()` och `write(board)` i `useBoard`.
-Behåll schemareglerna och React-vyerna.
-
-`useBoard` väntar på läsningen innan appen visar uppgifter.
-Den ordnar skrivningar så att senare ändringar sparas efter tidigare ändringar.
-Realtidslyssnare, konflikthantering och sparande utan nät kräver ytterligare arbete.
-Undvik att skriva hela hushållets dokument från flera enheter samtidigt.
-Använd separata dokument och riktade ändringar när Firebase införs.
-Importera lokala data efter ett uttryckligt val vid första inloggningen.
+Utan inloggning fungerar lokal lagring som tidigare.
+Första inloggningen kräver ett uttryckligt val innan lokala uppgifter förs över.
+Molnuppgifter och lokala uppgifter hålls åtskilda.
+Varje konto får endast läsa och ändra sina egna uppgifter.
+Synkning sker mellan enheter som använder samma Google-konto.
+Vid samtidiga ändringar stoppar versionskontrollen en tyst överskrivning.
+Länkar för delning och gemensamma hushåll återstår som nästa steg.
 
 ## Nästa steg: PWA
 
@@ -93,7 +92,8 @@ Ingen service worker lagrar gamla byggfiler i den här versionen.
 
 ## iPad
 
-Bygget anpassar JavaScript-syntax och CSS för Safari 12.
+Grundappen anpassar JavaScript-syntax och CSS för Safari 12.
+Firebase laddas separat och kräver en nyare webbläsare med BigInt-stöd.
 Det garanterar inte stöd för alla äldre iPad-modeller.
 Kontrollera appen på den faktiska paddan före byte.
 Skärmlås fungerar bara när webbläsaren erbjuder funktionen.
@@ -104,7 +104,7 @@ Använd annars paddans inställning för Autolås.
 `npm test` kontrollerar återkommande scheman, delmoment, flyttar, historik, säkerhetskopior och lagringsfel.
 GitHub kör testerna och produktionsbygget för varje ändringsförslag.
 
-`npm run test:ui` kontrollerar det byggda programmet med en simulerad webbsida.
+`npm run test:ui` bygger programmet och kontrollerar React-vyerna med en simulerad webbsida.
 Det kontrollerar formulär, delmoment, kalender, inköp, navigation och teman.
 Det ersätter inte en visuell kontroll på paddan.
 
@@ -118,9 +118,9 @@ Menyn tar hänsyn till telefonens skärmkant och ligger kvar när innehållet ru
 På större skärmar ligger kontoknappen efter Inställningar i navigationen.
 Inställningar innehåller också en egen del för kontot.
 
-`App` tar emot `user`, `onSignIn` och `onSignOut` när Firebase ansluts.
+`AuthApp` kopplar Firebase-kontot och inloggningsfunktionerna till `App`.
 `user` använder fälten `displayName`, `email` och `photoURL` från Firebase Authentication.
 Liggande vy och större skärmar visar en profilcirkel till vänster om loggans text.
 Profilcirkeln använder initialer om bilden saknas eller inte kan laddas.
-Kontodelen visar tydligt att inloggningen ännu inte är ansluten.
-Ingen knapp skapar ett låtsaskonto eller ändrar lokal lagring till molnlagring.
+Kontodelen visar Google-inloggning, profilbild och utloggning.
+Överföring av lokala uppgifter kräver ett uttryckligt val.

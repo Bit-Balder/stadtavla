@@ -23,11 +23,32 @@ w.confirm = () => true;
 w.alert = (m) => {
   throw Error(m);
 };
-const source = fs.readFileSync(
-  "dist/assets/" + fs.readdirSync("dist/assets").find((n) => n.endsWith(".js")),
-  "utf8",
-);
-w.eval(source);
+// Mount the same React components without contacting the live Firebase project.
+Object.assign(globalThis, {
+  window: w,
+  document: w.document,
+  HTMLElement: w.HTMLElement,
+  Event: w.Event,
+  alert: w.alert,
+  confirm: w.confirm,
+});
+Object.defineProperty(globalThis, "navigator", {
+  value: w.navigator,
+  configurable: true,
+});
+let root, server, App;
+async function mount() {
+  const { createServer } = await import("vite");
+  server = await createServer({
+    server: { middlewareMode: true },
+    appType: "custom",
+  });
+  ({ default: App } = await server.ssrLoadModule("/src/App.jsx"));
+  const React = require("react");
+  const { createRoot } = require("react-dom/client");
+  root = createRoot(w.document.getElementById("root"));
+  root.render(React.createElement(App));
+}
 const tick = () => new Promise((r) => setTimeout(r, 100));
 const query = (s) => w.document.querySelector(s);
 const buttons = () => [...w.document.querySelectorAll("button")];
@@ -50,6 +71,7 @@ function submit(selector) {
   );
 }
 (async () => {
+  await mount();
   for (let attempts = 0; !query("h2") && attempts < 50; attempts++)
     await tick();
   assert.equal(query("h2").textContent, "Dagens städning");
@@ -115,7 +137,9 @@ function submit(selector) {
   click("Logga in");
   await tick();
   assert.ok(
-    query('[role="dialog"]').textContent.includes("Google-inloggning kommer"),
+    query('[role="dialog"]').textContent.includes(
+      "Inloggningen är inte tillgänglig",
+    ),
   );
   assert.equal(query('[role="dialog"] .account-action').disabled, true);
   query('[aria-label="Stäng"]').click();
@@ -129,12 +153,70 @@ function submit(selector) {
   await tick();
   assert.equal(query("h2").textContent, "Dagens städning");
   assert.deepEqual(errors, []);
+  // An account starts with a choice; guest data never becomes cloud data implicitly.
+  let remote = null,
+    listener;
+  const repository = {
+    async read() {
+      return remote;
+    },
+    subscribe(next) {
+      listener = next;
+      return () => {
+        listener = null;
+      };
+    },
+    async write(board, revision) {
+      assert.equal(revision, remote?.revision || 0);
+      remote = {
+        board: JSON.parse(JSON.stringify(board)),
+        revision: revision + 1,
+      };
+      listener?.(remote);
+      return remote.revision;
+    },
+  };
+  const React = require("react");
+  const guestBefore = w.localStorage.getItem("hemma-stadtavla-v1");
+  root.render(
+    React.createElement(App, {
+      key: "alice",
+      user: { uid: "alice", displayName: "Anna Svensson" },
+      cloudRepository: repository,
+      onSignOut: () => {},
+    }),
+  );
+  await tick();
+  assert.ok(
+    w.document.body.textContent.includes("Första gången med det här kontot"),
+  );
+  assert.equal(remote, null);
+  click("Använd mina lokala uppgifter");
+  await tick();
+  assert.equal(remote.board.shopping[0].name, "Mjölk");
+  click("Inköp");
+  await tick();
+  input('[aria-label="Ny vara"]', "Molnvara");
+  await tick();
+  submit(".listcontrols");
+  await tick();
+  assert.ok(remote.board.shopping.some((item) => item.name === "Molnvara"));
+  assert.equal(w.localStorage.getItem("hemma-stadtavla-v1"), guestBefore);
+  root.render(React.createElement(App, { key: "guest" }));
+  await tick();
+  click("Inköp");
+  await tick();
+  assert.ok(!w.document.body.textContent.includes("Molnvara"));
+  root?.unmount();
+  await server?.close();
   w.close();
   console.log(
-    "PASS: production bundle, task/subtask forms, move calendar, shopping persistence, navigation, themes",
+    "PASS: React app, task/subtask forms, move calendar, shopping persistence, navigation, themes",
   );
-})().catch((e) => {
+})().catch(async (e) => {
   console.error(e);
+  root?.unmount();
+  await server?.close();
   w.close();
   process.exit(1);
 });

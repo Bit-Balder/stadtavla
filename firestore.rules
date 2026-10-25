@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function ownAccount(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function validBoard() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['board', 'revision', 'updatedAt'])
+        && data.keys().hasOnly(['board', 'revision', 'updatedAt'])
+        && data.revision is int
+        && data.revision >= 1
+        && data.updatedAt == request.time
+        && data.board is map
+        && data.board.keys().hasAll(['version','tasks','shopping','done','settings','theme','moves','skips'])
+        && data.board.version == 2
+        && data.board.tasks is list
+        && data.board.shopping is list
+        && data.board.done is map
+        && data.board.settings is map
+        && data.board.theme in ['light','dark','auto']
+        && data.board.moves is list
+        && data.board.skips is list;
+    }
+    match /users/{uid}/boards/home {
+      allow get: if ownAccount(uid);
+      allow create: if ownAccount(uid) && validBoard() && request.resource.data.revision == 1;
+      allow update: if ownAccount(uid) && validBoard()
+        && request.resource.data.revision == resource.data.revision + 1;
+      allow list, delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,65 +1,110 @@
 import { useEffect, useRef, useState } from "react";
-import { deep } from "../domain/schedule.js";
-import { updateBoard } from "../domain/board.js";
+import { useLocalBoard } from "./useLocalBoard.js";
+import { createCloudSession } from "../storage/cloudSession.js";
+import { createCloudCache } from "../storage/cloudCache.js";
 import { createLocalRepository } from "../storage/localRepository.js";
-export function useBoard() {
-  const [board, setBoard] = useState(null),
-    [error, setError] = useState(""),
-    [loadFailed, setLoadFailed] = useState(false);
-  const current = useRef(null),
-    repository = useRef(null),
-    undoState = useRef(null),
-    writes = useRef(Promise.resolve());
+import { deep, defaults } from "../domain/schedule.js";
+import { updateBoard } from "../domain/board.js";
+export function useBoard({ cloudRepository, user } = {}) {
+  const local = useLocalBoard(!cloudRepository);
+  const [cloud, setCloud] = useState({
+    board: null,
+    error: "",
+    status: "Läser molnuppgifter…",
+  });
+  const controller = useRef(null),
+    current = useRef(null),
+    undoState = useRef(null);
   useEffect(() => {
-    let active = true;
-    async function load() {
-      try {
-        repository.current = createLocalRepository(window.localStorage);
-        const data = await repository.current.read();
-        if (active) {
-          current.current = data;
-          setBoard(data);
-        }
-      } catch {
-        if (active) {
-          setLoadFailed(true);
-          setError(
-            "Kunde inte läsa sparade data. Befintliga data har inte skrivits över.",
-          );
-        }
-      }
+    if (!cloudRepository) return;
+    let cache;
+    try {
+      cache = createCloudCache(window.localStorage, user.uid);
+    } catch {
+      cache = {
+        read() {
+          return null;
+        },
+        write() {
+          throw Error("Lokal lagring är avstängd");
+        },
+      };
     }
-    load();
-    return () => {
-      active = false;
+    const session = createCloudSession({
+      repository: cloudRepository,
+      cache,
+      onChange: (next) => {
+        if (
+          current.current &&
+          !current.current.dirty &&
+          next.revision !== current.current.revision
+        )
+          undoState.current = null;
+        current.current = next;
+        setCloud(next);
+      },
+    });
+    controller.current = session;
+    session.start();
+    return () => session.dispose();
+  }, [cloudRepository, user?.uid]);
+  useEffect(() => {
+    if (!cloudRepository || !cloud.dirty) return;
+    const warn = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
     };
-  }, []);
-  function persist(next) {
-    current.current = next;
-    setBoard(next);
-    // Serialize asynchronous writes so future remote writes retain user action order.
-    writes.current = writes.current
-      .then(() => repository.current.write(deep(next)))
-      .then(() => setError(""))
-      .catch(() =>
-        setError(
-          "Kunde inte spara. Exportera en säkerhetskopia i Inställningar.",
-        ),
-      );
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [cloudRepository, cloud.dirty]);
+  if (!cloudRepository) return { ...local, mode: "local" };
+  function change(next) {
+    if (
+      !current.current?.board ||
+      current.current.blocked ||
+      current.current.needsSetup
+    )
+      return;
+    undoState.current = deep(current.current.board);
+    controller.current.commit(next);
   }
-  function commit(change) {
-    undoState.current = deep(current.current);
-    persist(updateBoard(current.current, change));
-  }
-  function replace(next) {
-    undoState.current = deep(current.current);
-    persist(deep(next));
-  }
-  function undo() {
-    if (!undoState.current) return;
-    const previous = undoState.current;
-    undoState.current = null;
-    persist(previous);
-  }
-  return { board, error, loadFailed, commit, replace, undo };
+  return {
+    ...cloud,
+    mode: "cloud",
+    loadFailed: !!cloud.error,
+    commit(update) {
+      if (current.current?.board)
+        change(updateBoard(current.current.board, update));
+    },
+    replace(next) {
+      change(deep(next));
+    },
+    undo() {
+      if (undoState.current) {
+        const previous = undoState.current;
+        undoState.current = null;
+        change(previous);
+        undoState.current = null;
+      }
+    },
+    retry: () => controller.current?.retry(),
+    reload: () => {
+      undoState.current = null;
+      return controller.current?.reload();
+    },
+    async initialize(useLocal) {
+      try {
+        const initial = useLocal
+          ? await createLocalRepository(window.localStorage).read()
+          : defaults();
+        await controller.current.initialize(initial);
+      } catch {
+        setCloud((previous) => ({
+          ...previous,
+          error:
+            "Kunde inte läsa lokala uppgifter. Exportera en säkerhetskopia från läget utan konto.",
+        }));
+      }
+    },
+  };
 }

@@ -22,6 +22,16 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run test:ui
+      - name: Build with Firebase configuration
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          VITE_RECAPTCHA_ENTERPRISE_SITE_KEY: ${{ secrets.RECAPTCHA_ENTERPRISE_SITE_KEY }}
+        run: |
+          if [ -z "$VITE_FIREBASE_API_KEY" ]; then
+            echo "::error::Repository secret FIREBASE_API_KEY is missing"
+            exit 1
+          fi
+          npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
