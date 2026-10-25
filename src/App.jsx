@@ -31,6 +31,7 @@ import TaskEditor, { SubEditor } from "./components/TaskEditor.jsx";
 import Modal from "./components/Modal.jsx";
 import DatePicker from "./components/DatePicker.jsx";
 import Navigation from "./components/Navigation.jsx";
+import CloudStatus from "./components/CloudStatus.jsx";
 import { AccountDialog } from "./components/Account.jsx";
 const pages = [
   ["day", "Dag", "Dagens städning"],
@@ -66,8 +67,17 @@ function MoveEditor({ entity, date, onSave, onClose }) {
   );
 }
 // Firebase can later supply its user and authentication actions through these props.
-export default function App({ user = null, onSignIn, onSignOut }) {
-  const { board, error, loadFailed, commit, replace, undo } = useBoard();
+export default function App({
+  user = null,
+  onSignIn,
+  onSignOut,
+  cloudRepository,
+  authError,
+  authLoading,
+}) {
+  const data = useBoard({ cloudRepository, user });
+  const { board, error, loadFailed, commit, replace, undo } = data;
+  const readOnly = data.mode === "cloud" && (data.blocked || data.needsSetup);
   const [page, setPage] = useState("day"),
     [date, setDate] = useState(today),
     [editor, setEditor] = useState(null),
@@ -97,25 +107,61 @@ export default function App({ user = null, onSignIn, onSignOut }) {
         <p role="status">{loadFailed ? error : "Läser städtavlan…"}</p>
         {loadFailed && (
           <p>
-            Exportera befintliga data från den gamla appen innan du fortsätter.
+            {data.mode === "cloud"
+              ? "Dina lokala uppgifter finns kvar i läget utan konto."
+              : "Exportera befintliga data från den gamla appen innan du fortsätter."}
           </p>
+        )}
+        {data.mode === "cloud" && (
+          <>
+            <button className="secondary" onClick={data.retry}>
+              Försök igen
+            </button>
+            <button className="secondary" onClick={onSignOut}>
+              Logga ut
+            </button>
+          </>
         )}
       </main>
     );
+  async function handleSignOut() {
+    if (data.pending) {
+      alert("Vänta tills uppgifterna har sparats innan du loggar ut.");
+      return;
+    }
+    if (
+      data.dirty &&
+      !confirm(
+        "Det finns osparade ändringar. Exportera en säkerhetskopia innan du loggar ut. Vill du fortsätta?",
+      )
+    )
+      return;
+    await onSignOut();
+  }
   function edit(id) {
     const entity = findEntity(board, id);
     if (!entity) return;
     setEditor(
       entity.sub
-        ? { type: "sub", task: entity.task, sub: entity.sub }
-        : { type: "task", task: entity.task },
+        ? {
+            type: "sub",
+            task: entity.task,
+            sub: entity.sub,
+            revision: data.revision,
+          }
+        : { type: "task", task: entity.task, revision: data.revision },
     );
   }
   const actions = {
     edit,
-    add: (day) => setEditor({ type: "task", date: day }),
+    add: (day) =>
+      setEditor({ type: "task", date: day, revision: data.revision }),
     addSub: (id) =>
-      setEditor({ type: "sub", task: findEntity(board, id).task }),
+      setEditor({
+        type: "sub",
+        task: findEntity(board, id).task,
+        revision: data.revision,
+      }),
     toggle: (id, day) => {
       commit((s) => setDone(s, id, day, !completed(s, id, day)));
       notify("Uppgiften uppdaterad.");
@@ -128,7 +174,13 @@ export default function App({ user = null, onSignIn, onSignOut }) {
       commit((s) => {
         s.settings.filter = value;
       }),
-    move: (id, day) => setEditor({ type: "move", id, date: day || date }),
+    move: (id, day) =>
+      setEditor({
+        type: "move",
+        id,
+        date: day || date,
+        revision: data.revision,
+      }),
     remove: (id) => {
       const entity = findEntity(board, id);
       if (
@@ -161,7 +213,17 @@ export default function App({ user = null, onSignIn, onSignOut }) {
         : advance(previous, step * (page === "week" ? 7 : 1)),
     );
   }
+  function editorCurrent() {
+    if (data.mode === "cloud" && editor?.revision !== data.revision) {
+      alert(
+        "Uppgifterna har ändrats på en annan enhet. Stäng formuläret och öppna det igen innan du sparar.",
+      );
+      return false;
+    }
+    return true;
+  }
   function saveTask(task) {
+    if (!editorCurrent()) return;
     commit((s) => {
       const previous = s.tasks.find((t) => t.id === task.id);
       if (previous) {
@@ -256,29 +318,42 @@ export default function App({ user = null, onSignIn, onSignOut }) {
               )}
             </div>
           </header>
-          {error && (
+          {error && data.mode !== "cloud" && (
             <div className="notice" role="alert">
               {error}
             </div>
           )}
-          {page === "day" && (
-            <DayView board={board} date={date} actions={actions} />
+          {authError && (
+            <div className="notice" role="alert">
+              {authError}
+            </div>
           )}
-          {["week", "month"].includes(page) && (
-            <CalendarView
-              board={board}
-              date={date}
-              monthly={page === "month"}
-              onOpen={(day) => {
-                setDate(day);
-                setPage("day");
-              }}
-            />
+          {authLoading && (
+            <p className="smallprint" role="status">
+              Kontrollerar inloggning…
+            </p>
           )}
-          {page === "tasks" && <TasksView board={board} actions={actions} />}
-          {page === "shopping" && (
-            <ShoppingView board={board} commit={commit} notify={notify} />
-          )}
+          <CloudStatus state={data} />
+          <fieldset className="board-content" disabled={readOnly}>
+            {page === "day" && (
+              <DayView board={board} date={date} actions={actions} />
+            )}
+            {["week", "month"].includes(page) && (
+              <CalendarView
+                board={board}
+                date={date}
+                monthly={page === "month"}
+                onOpen={(day) => {
+                  setDate(day);
+                  setPage("day");
+                }}
+              />
+            )}
+            {page === "tasks" && <TasksView board={board} actions={actions} />}
+            {page === "shopping" && (
+              <ShoppingView board={board} commit={commit} notify={notify} />
+            )}
+          </fieldset>
           {page === "settings" && (
             <SettingsView
               board={board}
@@ -286,9 +361,11 @@ export default function App({ user = null, onSignIn, onSignOut }) {
               replace={replace}
               notify={notify}
               wake={wake}
+              mode={data.mode}
+              readOnly={readOnly}
               user={user}
               onSignIn={onSignIn}
-              onSignOut={onSignOut}
+              onSignOut={onSignOut ? handleSignOut : undefined}
             />
           )}
         </main>
@@ -297,7 +374,7 @@ export default function App({ user = null, onSignIn, onSignOut }) {
         <AccountDialog
           user={user}
           onSignIn={onSignIn}
-          onSignOut={onSignOut}
+          onSignOut={onSignOut ? handleSignOut : undefined}
           onClose={() => setAccountOpen(false)}
         />
       )}
@@ -331,6 +408,7 @@ export default function App({ user = null, onSignIn, onSignOut }) {
           parent={editor.task}
           onClose={() => setEditor(null)}
           onSave={(sub) => {
+            if (!editorCurrent()) return;
             commit((s) => {
               const task = s.tasks.find((t) => t.id === editor.task.id);
               task.subs = editor.sub
@@ -351,6 +429,7 @@ export default function App({ user = null, onSignIn, onSignOut }) {
           date={editor.date}
           onClose={() => setEditor(null)}
           onSave={(to) => {
+            if (!editorCurrent()) return;
             commit((s) => moveOccurrence(s, editor.id, fmt(editor.date), to));
             setEditor(null);
             notify("Uppgiften flyttades.");

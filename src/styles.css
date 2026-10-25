@@ -2318,3 +2318,28 @@ textarea {
     margin-right: 8px;
   }
 }
+.board-content {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.board-content:disabled {
+  opacity: 0.7;
+}
+.cloud-status {
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.cloud-status > span {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 9px;
+  background: var(--greenSoft);
+  color: var(--green);
+}
+.cloud-setup .inlinecontrols {
+  gap: 12px;
+}

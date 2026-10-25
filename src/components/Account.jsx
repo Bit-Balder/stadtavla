@@ -33,8 +33,10 @@ export function AccountPanel({ user, onSignIn, onSignOut }) {
     setError("");
     try {
       await action();
-    } catch {
-      setError("Det gick inte att ändra inloggningen. Försök igen.");
+    } catch (error) {
+      setError(
+        error.message || "Det gick inte att ändra inloggningen. Försök igen.",
+      );
     } finally {
       setPending(false);
     }
@@ -80,8 +82,8 @@ export function AccountPanel({ user, onSignIn, onSignOut }) {
                 Logga in med Google
               </button>
               <p className="caption">
-                Google-inloggning kommer när vi ansluter Firebase. Dina
-                uppgifter sparas på den här enheten.
+                Inloggningen är inte tillgänglig just nu. Dina uppgifter sparas
+                på den här enheten.
               </p>
             </>
           )}

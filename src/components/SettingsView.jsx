@@ -7,6 +7,8 @@ export default function SettingsView({
   replace,
   notify,
   wake,
+  mode,
+  readOnly,
   user,
   onSignIn,
   onSignOut,
@@ -53,6 +55,7 @@ export default function SettingsView({
             ["dark", "Mörkt"],
           ].map(([key, label]) => (
             <button
+              disabled={readOnly}
               className="themechoice"
               key={key}
               aria-pressed={board.theme === key}
@@ -86,6 +89,7 @@ export default function SettingsView({
             <p className="smallprint">Visa mer plats för uppgifterna.</p>
           </div>
           <button
+            disabled={readOnly}
             className="secondary"
             onClick={() =>
               commit((s) => {
@@ -107,7 +111,11 @@ export default function SettingsView({
           <button className="primary" onClick={download}>
             Exportera fil
           </button>
-          <button className="secondary" onClick={() => input.current.click()}>
+          <button
+            disabled={readOnly}
+            className="secondary"
+            onClick={() => input.current.click()}
+          >
             Importera fil
           </button>
         </div>
@@ -115,6 +123,7 @@ export default function SettingsView({
           ref={input}
           type="file"
           className="backupfile"
+          disabled={readOnly}
           accept="application/json,.json"
           onChange={(e) => {
             restore(e.target.files[0]);
@@ -132,7 +141,9 @@ export default function SettingsView({
       <section className="panel">
         <h3>Om tavlan</h3>
         <p className="caption">
-          Städtavlan 3.0 · Data sparas på den här enheten.
+          {mode === "cloud"
+            ? "Städtavlan 3.1 · Uppgifterna sparas i ditt Google-kontos molnlagring."
+            : "Städtavlan 3.1 · Data sparas på den här enheten."}
         </p>
       </section>
     </>

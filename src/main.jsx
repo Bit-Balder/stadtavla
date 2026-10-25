@@ -1,9 +1,47 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./styles.css";
+function Bootstrap() {
+  const [AccountApp, setAccountApp] = useState(null),
+    [error, setError] = useState("");
+  const supported = typeof BigInt === "function" && typeof fetch === "function";
+  useEffect(() => {
+    if (!supported) return;
+    let active = true;
+    import("./firebase/AuthApp.jsx")
+      .then((module) => {
+        if (active) setAccountApp(() => module.default);
+      })
+      .catch(() => {
+        if (active)
+          setError(
+            "Kunde inte läsa in inloggningen. Lokal lagring fungerar fortfarande. Ladda om för att försöka igen.",
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [supported]);
+  if (AccountApp) return <AccountApp />;
+  return (
+    <App
+      authLoading={supported && !error}
+      authError={error}
+      onSignIn={
+        !supported
+          ? () => {
+              throw Error(
+                "Webbläsaren saknar stöd för molnlagring. Använd en nyare webbläsare för att logga in.",
+              );
+            }
+          : undefined
+      }
+    />
+  );
+}
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <App />
+    <Bootstrap />
   </StrictMode>,
 );

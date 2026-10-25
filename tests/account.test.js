@@ -20,7 +20,7 @@ test("account controls wait for authentication and accept a future Google profil
       renderToStaticMarkup(createElement(Component, props));
     const loggedOut = render(AccountPanel, { user: null });
     assert.match(loggedOut, /disabled=""/);
-    assert.match(loggedOut, /Google-inloggning kommer/);
+    assert.match(loggedOut, /Inloggningen är inte tillgänglig/);
     const ready = render(AccountPanel, { user: null, onSignIn() {} });
     assert.doesNotMatch(ready, /disabled=""/);
     const user = {
