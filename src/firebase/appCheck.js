@@ -1,6 +1,6 @@
 // This is the public, score-based reCAPTCHA Enterprise website key.
 // Populate it after registering bit-balder.github.io in the stadtavla project.
-export const appCheckSiteKey = "";
+export const appCheckSiteKey = import.meta.env?.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY || "";
 
 // Missing configuration must never start unprotected Firebase services.
 export function configureAppCheck(
