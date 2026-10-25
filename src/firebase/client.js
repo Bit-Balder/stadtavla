@@ -14,13 +14,16 @@ import {
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 export const firebaseConfig = {
-  apiKey: "AIzaSyDw1bCf82xB5438BRxvqvGPTazdw9djPuE",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "stadtavla.firebaseapp.com",
   projectId: "stadtavla",
   storageBucket: "stadtavla.firebasestorage.app",
   messagingSenderId: "318653264481",
-  appId: "1:318653264481:web:ef0ffff8999b4ddb683020",
+  appId: "1:318653264481:web:11ac82efcd0c5fca683020",
 };
+if (!firebaseConfig.apiKey?.trim()) {
+  throw Error("Firebase saknar API-nyckel. Molnlagringen är inte aktiverad.");
+}
 const app = initializeApp(firebaseConfig);
 // Initialize before Auth or Firestore can make any requests.
 const appCheck = configureAppCheck(app, appCheckSiteKey, {
