@@ -111,6 +111,9 @@ Det ersätter inte en visuell kontroll på paddan.
 ## Navigation och konto
 
 Mobilvyn visar loggan högst upp och sex lika breda menyknappar längst ned.
+Samma meny visas på liggande plattor upp till 1440 bildpunkters bredd.
+Plattans rubrik och datumknappar ligger kvar på samma rad.
+Profilcirkeln visas även i detta läge när en användare finns.
 Menyn tar hänsyn till telefonens skärmkant och ligger kvar när innehållet rullas.
 På större skärmar ligger kontoknappen efter Inställningar i navigationen.
 Inställningar innehåller också en egen del för kontot.

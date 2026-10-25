@@ -2138,7 +2138,9 @@ textarea {
   }
 }
 
-@media (max-width: 650px) {
+/* Share the mobile tab bar with landscape tablets, including larger iPad screens. */
+@media (max-width: 650px),
+  (min-width: 651px) and (max-width: 1440px) and (orientation: landscape) {
   #app,
   #app.sidebar-hidden {
     display: flex;
@@ -2270,5 +2272,49 @@ textarea {
 @media (max-width: 360px) {
   .sidebar .navbtn {
     font-size: 9px;
+  }
+}
+
+/* Keep the tablet header on one row and retain the future Google avatar. */
+@media (min-width: 651px) and (max-width: 1440px) and (orientation: landscape) {
+  #app .sidebar,
+  #app.sidebar-hidden .sidebar {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  .sidebar .brand {
+    gap: 12px;
+  }
+  .sidebar .brand-profile {
+    display: inline-flex;
+  }
+  .sidebar .brand-profile + .brand-mark {
+    display: none;
+  }
+  .sidebar .navbtn {
+    min-height: 64px;
+    height: 64px;
+    font-size: 13px;
+  }
+  .sidebar .nav {
+    padding-top: 8px;
+  }
+  #app .main {
+    padding: 22px 24px 110px;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom));
+  }
+  .top {
+    flex-wrap: nowrap;
+  }
+  .top-left {
+    min-width: 0;
+    flex: 1;
+  }
+  .top-tools {
+    width: auto;
+    flex-shrink: 0;
+  }
+  .top-tools .clock {
+    margin-right: 8px;
   }
 }
