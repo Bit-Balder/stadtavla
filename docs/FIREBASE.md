@@ -47,7 +47,30 @@ Kommandot ändrar endast Firestore-reglerna.
 Skicka aldrig administratörsnycklar eller inloggningstoken till chatten.
 Webbappens Firebase-konfiguration är avsedd att finnas i klientkoden.
 
-## 4. Publicera och testa appen
+## 4. Registrera App Check
+
+Molnlagringen startar inte förrän en App Check-webbplatsnyckel finns i koden.
+Grundappen fortsätter fungera med lokal lagring under tiden.
+
+1. Öppna Google Cloud Console och välj projektet `stadtavla`.
+2. Öppna **reCAPTCHA / Fraud Defense** och aktivera reCAPTCHA Enterprise API om guiden frågar.
+3. Skapa en nyckel för **Web** med domänen `bit-balder.github.io`.
+4. Lämna **Use checkbox challenge** avstängd. App Check kräver en poängbaserad nyckel.
+5. Lägg inte till `localhost` för den här produktionsnyckeln.
+6. Kopiera den offentliga webbplatsnyckeln.
+7. Öppna **Firebase → Security → App Check → Apps**.
+8. Registrera Städtavlas webbapp med **reCAPTCHA Enterprise** och ange samma webbplatsnyckel.
+9. Behåll till att börja med standardvärdena för poänggräns och giltighetstid.
+10. Fyll i `appCheckSiteKey` i `src/firebase/appCheck.js`.
+
+Webbplatsnyckeln är offentlig och får finnas i klientkoden.
+Ingen hemlig reCAPTCHA-nyckel ska finnas i GitHub eller skickas till chatten.
+Koden startar App Check före Authentication och Firestore.
+Den verifierar appen innan den återställer användarens konto.
+Automatisk förnyelse av App Check-token är aktiverad.
+Ingen felsökningsnyckel eller alternativ väg runt kontrollen finns i produktionskoden.
+
+## 5. Publicera och testa appen
 
 Slå ihop ändringsförslaget när kontrollerna är gröna.
 Vänta på GitHub Pages-publiceringen.
@@ -65,6 +88,30 @@ Finns det redan molnuppgifter hämtar appen dem utan att importera den lokala ko
 Logga in med samma Google-konto på den andra enheten.
 Bocka av en vara och kontrollera att ändringen visas på båda enheterna.
 Kontrollera statusen **Sparat i molnet** före utloggning.
+
+## 6. Kräv App Check efter testning
+
+När den uppdaterade appen fungerar på mobilen och paddan:
+
+1. Öppna **Firebase → Security → App Check → APIs**.
+2. Kontrollera att appens anrop till **Cloud Firestore** visas som verifierade.
+3. Välj **Enforce** för Cloud Firestore och bekräfta.
+4. Kontrollera motsvarande stöd och verifierade anrop för **Authentication** innan du aktiverar dess kontroll.
+5. Testa inloggning och avbockning från båda enheterna igen.
+
+App Check blockerar inte ogiltiga anrop till en tjänst förrän tjänstens kontroll har aktiverats i Firebase.
+Enbart klientkoden räcker därför inte.
+Kontrollen kan ta upp till 15 minuter att börja gälla.
+Äldre öppna versioner utan App Check förlorar molnåtkomsten när kontrollen aktiveras.
+
+App Check kompletterar databasreglerna och begränsningarna för Firebase-nyckeln.
+Det minskar missbruk men garanterar inte att allt missbruk förhindras.
+Nyckeln för Firebase bör endast tillåta nödvändiga Firebase-tjänster i Google Cloud.
+
+Officiella instruktioner:
+
+- https://firebase.google.com/docs/app-check/web/recaptcha-enterprise-provider
+- https://firebase.google.com/docs/app-check/enable-enforcement
 
 ## Fel och återställning
 

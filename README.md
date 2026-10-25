@@ -70,7 +70,9 @@ Appen visar ett fel om lagringen misslyckas.
 
 Appen använder Google-inloggning och Firestore när ett konto är inloggat.
 Följ [Firebase-guiden](docs/FIREBASE.md) innan du aktiverar versionen.
-Guiden beskriver Google-inloggning, tillåtna domäner, databas och säkerhetsregler.
+Guiden beskriver Google-inloggning, tillåtna domäner, databas, säkerhetsregler och App Check.
+App Check kräver en offentlig reCAPTCHA Enterprise-webbplatsnyckel innan molnlagringen startar.
+Aktivera även tjänsternas App Check-kontroll i Firebase efter verifierad testning.
 
 Utan inloggning fungerar lokal lagring som tidigare.
 Första inloggningen kräver ett uttryckligt val innan lokala uppgifter förs över.

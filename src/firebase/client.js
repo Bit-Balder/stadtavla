@@ -1,5 +1,11 @@
 import { initializeApp } from "firebase/app";
 import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+  getToken,
+} from "firebase/app-check";
+import { appCheckSiteKey, configureAppCheck } from "./appCheck.js";
+import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
@@ -16,6 +22,14 @@ export const firebaseConfig = {
   appId: "1:318653264481:web:ef0ffff8999b4ddb683020",
 };
 const app = initializeApp(firebaseConfig);
+// Initialize before Auth or Firestore can make any requests.
+const appCheck = configureAppCheck(app, appCheckSiteKey, {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+});
+export function verifyAppCheck() {
+  return getToken(appCheck, false);
+}
 export const auth = getAuth(app);
 export const database = getFirestore(app);
 export function watchUser(next, error) {

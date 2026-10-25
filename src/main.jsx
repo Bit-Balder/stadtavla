@@ -16,7 +16,7 @@ function Bootstrap() {
       .catch(() => {
         if (active)
           setError(
-            "Kunde inte läsa in inloggningen. Lokal lagring fungerar fortfarande. Ladda om för att försöka igen.",
+            "Molnlagringen kunde inte startas. Kontrollera Firebase-inställningarna och ladda om sidan. Lokal lagring fungerar fortfarande.",
           );
       });
     return () => {

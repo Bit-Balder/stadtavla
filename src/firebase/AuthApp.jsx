@@ -1,32 +1,57 @@
 import { useEffect, useMemo, useState } from "react";
 import App from "../App.jsx";
 import { createCloudRepository } from "../storage/cloudRepository.js";
-import { database, login, logout, watchUser } from "./client.js";
+import {
+  database,
+  login,
+  logout,
+  watchUser,
+  verifyAppCheck,
+} from "./client.js";
 export default function AuthApp() {
   const [user, setUser] = useState(null),
     [ready, setReady] = useState(false),
+    [checking, setChecking] = useState(true),
     [error, setError] = useState("");
   const repository = useMemo(
     () => (user ? createCloudRepository(database, user.uid) : null),
     [user?.uid],
   );
-  useEffect(
-    () =>
-      watchUser(
-        (next) => {
-          setUser(next);
-          setReady(true);
-          setError("");
-        },
-        () => {
-          setError(
-            "Kunde inte återställa inloggningen. Du kan fortsätta utan konto.",
-          );
-          setReady(true);
-        },
-      ),
-    [],
-  );
+  useEffect(() => {
+    let active = true,
+      unsubscribe;
+    verifyAppCheck()
+      .then(() => {
+        if (!active) return;
+        unsubscribe = watchUser(
+          (next) => {
+            if (!active) return;
+            setUser(next);
+            setReady(true);
+            setChecking(false);
+            setError("");
+          },
+          () => {
+            if (!active) return;
+            setError(
+              "Kunde inte återställa inloggningen. Du kan fortsätta utan konto.",
+            );
+            setChecking(false);
+          },
+        );
+      })
+      .catch(() => {
+        if (!active) return;
+        setError(
+          "Kunde inte verifiera appen. Kontrollera anslutningen och ladda om sidan. Lokal lagring fungerar fortfarande.",
+        );
+        setChecking(false);
+      });
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, []);
   async function signIn() {
     try {
       setError("");
@@ -57,7 +82,7 @@ export default function AuthApp() {
       onSignIn={ready ? signIn : undefined}
       onSignOut={logout}
       authError={error}
-      authLoading={!ready}
+      authLoading={checking}
     />
   );
 }
