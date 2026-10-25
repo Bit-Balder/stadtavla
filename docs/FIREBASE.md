@@ -61,7 +61,7 @@ Grundappen fortsätter fungera med lokal lagring under tiden.
 7. Öppna **Firebase → Security → App Check → Apps**.
 8. Registrera Städtavlas webbapp med **reCAPTCHA Enterprise** och ange samma webbplatsnyckel.
 9. Behåll till att börja med standardvärdena för poänggräns och giltighetstid.
-10. Fyll i `appCheckSiteKey` i `src/firebase/appCheck.js`.
+10. Spara webbplatsnyckeln som repository secret `RECAPTCHA_ENTERPRISE_SITE_KEY` i GitHub.
 
 Webbplatsnyckeln är offentlig och får finnas i klientkoden.
 Ingen hemlig reCAPTCHA-nyckel ska finnas i GitHub eller skickas till chatten.
@@ -159,3 +159,27 @@ De körs mot projektet `demo-stadtavla` i en lokal emulator.
 De använder aldrig den riktiga databasen.
 GitHub kör också regeltesterna med Java 21.
 Det riktiga Google-inloggningsflödet testas manuellt efter Firebase-inställningarna.
+
+## GitHub Secrets och nyckelbyte
+
+Öppna Settings → Secrets and variables → Actions → New repository secret.
+Skapa `FIREBASE_API_KEY` med Firebase-webbappens API-nyckel.
+Skapa `RECAPTCHA_ENTERPRISE_SITE_KEY` med App Check-webbplatsnyckeln när den finns.
+Publiceringen hämtar värdena från Secrets under det sista bygget.
+Kontrollerna använder inga produktionsnycklar.
+Saknas API-nyckeln stoppar publiceringen.
+Saknas App Check-webbplatsnyckeln förblir molnlagringen avstängd.
+
+Nyckeln finns fortfarande i den byggda webbappen och tidigare GitHub-historik.
+Secrets tar inte bort historiken och återkallar inte en gammal nyckel.
+Skapa en ersättningsnyckel i Google Cloud → APIs & Services → Credentials.
+Begränsa ersättningsnyckeln till nödvändiga Firebase-tjänster.
+Uppdatera `FIREBASE_API_KEY`, bygg om och testa inloggning och synkning.
+Återkalla sedan den gamla nyckeln i Google Cloud.
+Att ta bort en Firebase-webbapp byter inte projektets API-nyckel.
+
+För lokal utveckling används en ignorerad `.env.local` med motsvarande `VITE_`-variabler.
+Lägg aldrig privata administratörsnycklar i `VITE_`-variabler.
+Framtida nycklar ska sparas i Secrets och aldrig skrivas direkt i källkoden.
+Privata nycklar får endast användas på servern.
+Google Analytics används fortfarande inte.
