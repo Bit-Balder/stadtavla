@@ -107,3 +107,17 @@ GitHub kör testerna och produktionsbygget för varje ändringsförslag.
 `npm run test:ui` kontrollerar det byggda programmet med en simulerad webbsida.
 Det kontrollerar formulär, delmoment, kalender, inköp, navigation och teman.
 Det ersätter inte en visuell kontroll på paddan.
+
+## Navigation och konto
+
+Mobilvyn visar loggan högst upp och sex lika breda menyknappar längst ned.
+Menyn tar hänsyn till telefonens skärmkant och ligger kvar när innehållet rullas.
+På större skärmar ligger kontoknappen efter Inställningar i navigationen.
+Inställningar innehåller också en egen del för kontot.
+
+`App` tar emot `user`, `onSignIn` och `onSignOut` när Firebase ansluts.
+`user` använder fälten `displayName`, `email` och `photoURL` från Firebase Authentication.
+Liggande vy och större skärmar visar en profilcirkel till vänster om loggans text.
+Profilcirkeln använder initialer om bilden saknas eller inte kan laddas.
+Kontodelen visar tydligt att inloggningen ännu inte är ansluten.
+Ingen knapp skapar ett låtsaskonto eller ändrar lokal lagring till molnlagring.

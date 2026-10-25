@@ -50,7 +50,8 @@ function submit(selector) {
   );
 }
 (async () => {
-  for (let attempts = 0; !query("h2") && attempts < 50; attempts++) await tick();
+  for (let attempts = 0; !query("h2") && attempts < 50; attempts++)
+    await tick();
   assert.equal(query("h2").textContent, "Dagens städning");
   query('[aria-label="Lägg till uppgift"]').click();
   await tick();
@@ -107,6 +108,18 @@ function submit(selector) {
     click(view);
     await tick();
   }
+  assert.equal(query(".nav").children.length, 6);
+  assert.equal(query(".nav-icon").getAttribute("aria-hidden"), "true");
+  assert.ok(query(".brand-copy h1").textContent.includes("Hemma."));
+  assert.ok(w.document.body.textContent.includes("Mitt konto"));
+  click("Logga in");
+  await tick();
+  assert.ok(
+    query('[role="dialog"]').textContent.includes("Google-inloggning kommer"),
+  );
+  assert.equal(query('[role="dialog"] .account-action').disabled, true);
+  query('[aria-label="Stäng"]').click();
+  await tick();
   click("Mörkt");
   await tick();
   assert.ok(w.document.documentElement.classList.contains("theme-dark"));

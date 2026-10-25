@@ -30,6 +30,8 @@ import SettingsView from "./components/SettingsView.jsx";
 import TaskEditor, { SubEditor } from "./components/TaskEditor.jsx";
 import Modal from "./components/Modal.jsx";
 import DatePicker from "./components/DatePicker.jsx";
+import Navigation from "./components/Navigation.jsx";
+import { AccountDialog } from "./components/Account.jsx";
 const pages = [
   ["day", "Dag", "Dagens städning"],
   ["week", "Vecka", "Veckoplanering"],
@@ -63,12 +65,14 @@ function MoveEditor({ entity, date, onSave, onClose }) {
     </Modal>
   );
 }
-export default function App() {
+// Firebase can later supply its user and authentication actions through these props.
+export default function App({ user = null, onSignIn, onSignOut }) {
   const { board, error, loadFailed, commit, replace, undo } = useBoard();
   const [page, setPage] = useState("day"),
     [date, setDate] = useState(today),
     [editor, setEditor] = useState(null),
-    [toast, setToast] = useState("");
+    [toast, setToast] = useState(""),
+    [accountOpen, setAccountOpen] = useState(false);
   const now = useClock(),
     wake = useWakeLock(),
     lastDay = useRef(fmt(today()));
@@ -179,28 +183,16 @@ export default function App() {
         id="app"
         className={board.settings.collapsed ? "sidebar-hidden" : ""}
       >
-        <aside className="sidebar">
-          <div className="brand">
-            <div className="brand-mark">⌂</div>
-            <h1>Hemma.</h1>
-            <small>Vår städtavla</small>
-          </div>
-          <nav className="nav" aria-label="Vyer">
-            {pages.map(([key, label]) => (
-              <button
-                key={key}
-                className={`navbtn ${page === key ? "active" : ""}`}
-                aria-current={page === key ? "page" : undefined}
-                onClick={() => {
-                  setPage(key);
-                  setToast("");
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </nav>
-        </aside>
+        <Navigation
+          pages={pages}
+          page={page}
+          user={user}
+          onAccount={() => setAccountOpen(true)}
+          onNavigate={(key) => {
+            setPage(key);
+            setToast("");
+          }}
+        />
         <main className="main">
           <header className="top">
             <div className="top-left">
@@ -294,10 +286,21 @@ export default function App() {
               replace={replace}
               notify={notify}
               wake={wake}
+              user={user}
+              onSignIn={onSignIn}
+              onSignOut={onSignOut}
             />
           )}
         </main>
       </div>
+      {accountOpen && (
+        <AccountDialog
+          user={user}
+          onSignIn={onSignIn}
+          onSignOut={onSignOut}
+          onClose={() => setAccountOpen(false)}
+        />
+      )}
       {toast && (
         <div className="toast" role="status">
           {toast}

@@ -1,6 +1,16 @@
 import { useRef } from "react";
+import { AccountPanel } from "./Account.jsx";
 import { fmt, normalize, today } from "../domain/schedule.js";
-export default function SettingsView({ board, commit, replace, notify, wake }) {
+export default function SettingsView({
+  board,
+  commit,
+  replace,
+  notify,
+  wake,
+  user,
+  onSignIn,
+  onSignOut,
+}) {
   const input = useRef(null);
   function download() {
     const blob = new Blob([JSON.stringify(board, null, 2)], {
@@ -70,7 +80,7 @@ export default function SettingsView({ board, commit, replace, notify, wake }) {
             {wake.awake ? "På" : "Av"}
           </button>
         </div>
-        <div className="switchrow">
+        <div className="switchrow navigation-setting">
           <div>
             <strong>Dölj navigation</strong>
             <p className="smallprint">Visa mer plats för uppgifterna.</p>
@@ -114,6 +124,10 @@ export default function SettingsView({ board, commit, replace, notify, wake }) {
         <p className="smallprint">
           En import ersätter alla befintliga uppgifter efter bekräftelse.
         </p>
+      </section>
+      <section className="panel account-settings">
+        <h3>Mitt konto</h3>
+        <AccountPanel user={user} onSignIn={onSignIn} onSignOut={onSignOut} />
       </section>
       <section className="panel">
         <h3>Om tavlan</h3>
