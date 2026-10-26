@@ -1,4 +1,3 @@
-import { ProfileAvatar } from "./Account.jsx";
 const paths = {
   day: (
     <>
@@ -60,24 +59,9 @@ export function NavigationIcon({ name }) {
     </svg>
   );
 }
-export default function Navigation({
-  pages,
-  page,
-  onNavigate,
-  user,
-  onAccount,
-}) {
+export default function Navigation({ pages, page, onNavigate }) {
   return (
     <aside className="sidebar">
-      <div className="brand">
-        <div className="brand-mark" aria-hidden="true">
-          ⌂
-        </div>
-        <div className="brand-copy">
-          <h1>Hemma.</h1>
-          <small>Vår städtavla</small>
-        </div>
-      </div>
       <nav className="nav" aria-label="Vyer">
         {pages.map(([key, label]) => (
           <button
@@ -91,10 +75,6 @@ export default function Navigation({
           </button>
         ))}
       </nav>
-      <button className="account-nav" onClick={onAccount}>
-        {user ? <ProfileAvatar user={user} /> : <NavigationIcon name="user" />}
-        <span>{user ? user.displayName || "Mitt konto" : "Logga in"}</span>
-      </button>
     </aside>
   );
 }

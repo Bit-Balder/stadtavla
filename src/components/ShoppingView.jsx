@@ -5,7 +5,7 @@ import DatePicker from "./DatePicker.jsx";
 import Sortable from "./Sortable.jsx";
 import { ShoppingShare } from "./ShoppingShare.jsx";
 import { uid } from "../domain/schedule.js";
-import { reorderBefore, changeOrder } from "../domain/board.js";
+import { reorderBefore } from "../domain/board.js";
 import {
   stores,
   categories,
@@ -163,7 +163,6 @@ export default function ShoppingView({
         notify("Varan togs bort.");
       }
     },
-    order: (id, delta) => commit((s) => changeOrder(s.shopping, id, delta)),
   };
   return (
     <>
@@ -177,7 +176,7 @@ export default function ShoppingView({
       <section className="panel">
         <div className="panelhead">
           <h3>Handla</h3>
-          <div className="section-actions">
+          <div className="section-actions equal-actions">
             <button
               className="secondary"
               disabled={!board.shopping.length}
@@ -186,7 +185,7 @@ export default function ShoppingView({
               Visa QR-kod
             </button>
             <button
-              className="minibtn"
+              className="secondary"
               onClick={() => {
                 if (confirm("Rensa alla köpta varor?")) {
                   commit((s) => {

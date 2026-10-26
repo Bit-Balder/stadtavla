@@ -210,7 +210,7 @@ const submit = () =>
   const a = q("[data-sort-id=a]"),
     b = q("[data-sort-id=b]");
   document.elementFromPoint = () => b;
-  b.getBoundingClientRect = () => ({ top: 100, height: 100 });
+  b.getBoundingClientRect = () => ({ top: 100, bottom: 200, left: 0, width: 300, height: 100 });
   a.querySelector("button").dispatchEvent(
     new w.MouseEvent("mousedown", {
       bubbles: true,
@@ -219,6 +219,8 @@ const submit = () =>
     }),
   );
   await new Promise((r) => setTimeout(r, 480));
+  assert.ok(q(".drag-preview"));
+  assert.ok(a.classList.contains("drag-origin"));
   document.dispatchEvent(
     new w.MouseEvent("mousemove", {
       bubbles: true,
@@ -227,11 +229,24 @@ const submit = () =>
       clientY: 180,
     }),
   );
+  assert.equal(q(".drag-preview").style.top, "80px");
+  assert.equal(q(".drop-marker").style.top, "200px");
   document.dispatchEvent(new w.MouseEvent("mouseup", { bubbles: true }));
+  assert.equal(q(".drag-preview"), null);
+  assert.equal(q(".drop-marker"), null);
   a.querySelector("button").click();
   await tick();
   assert.deepEqual(moves, [["a", "b", true]]);
   assert.equal(clicks, 0);
+  await new Promise((r) => setTimeout(r, 610));
+  const touch = new w.Event("touchstart", { bubbles: true });
+  touch.touches = [{ clientX: 100, clientY: 100 }];
+  a.dispatchEvent(touch);
+  await new Promise((r) => setTimeout(r, 480));
+  assert.ok(q(".drag-preview"));
+  document.dispatchEvent(new w.Event("touchcancel", { bubbles: true }));
+  assert.equal(q(".drag-preview"), null);
+  assert.equal(moves.length, 1);
   const { default: Copy } = await server.ssrLoadModule(
     "/src/components/ShoppingShare.jsx",
   );

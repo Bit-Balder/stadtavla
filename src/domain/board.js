@@ -105,3 +105,29 @@ export function reorderBefore(list, id, targetId, after = false) {
   const to = list.findIndex((x) => x.id === targetId);
   list.splice(to + (after ? 1 : 0), 0, item);
 }
+
+export function skipOccurrence(state, id, date) {
+  const entity = findEntity(state, id);
+  if (!entity) return;
+  const ids =
+    !entity.sub && entity.task.subs.length
+      ? dueEntries(state, date)
+          .filter((e) => e.task.id === id)
+          .map((e) => e.id)
+      : [id];
+  const day = fmt(date);
+  for (const item of ids) {
+    if (!state.skips.some((s) => s.id === item && s.date === day))
+      state.skips.push({ id: item, date: day });
+    setDone(state, item, date, false);
+  }
+}
+export function deleteTask(state, id) {
+  const entity = findEntity(state, id);
+  if (!entity) return;
+  const ids = entity.sub ? [id] : [id, ...entity.task.subs.map((s) => s.id)];
+  if (entity.sub)
+    entity.task.subs = entity.task.subs.filter((s) => s.id !== id);
+  else state.tasks = state.tasks.filter((t) => t.id !== id);
+  removeEntities(state, ids);
+}

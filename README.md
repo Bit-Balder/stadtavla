@@ -90,14 +90,13 @@ Bestäm också vad appen ska kunna göra utan nät.
 Nuvarande Apple-metataggar finns kvar.
 Ingen service worker lagrar gamla byggfiler i den här versionen.
 
-## iPad
+## Enheter
 
 Grundappen anpassar JavaScript-syntax och CSS för Safari 12.
 Firebase laddas separat och kräver en nyare webbläsare med BigInt-stöd.
-Det garanterar inte stöd för alla äldre iPad-modeller.
-Kontrollera appen på den faktiska paddan före byte.
-Skärmlås fungerar bara när webbläsaren erbjuder funktionen.
-Använd annars paddans inställning för Autolås.
+Det garanterar inte stöd för alla äldre enheter.
+Kontrollera appen på den faktiska enheten före byte.
+Skärmens viloläge hanteras i enhetens egna inställningar.
 
 ## Kontroller
 
@@ -106,7 +105,7 @@ GitHub kör testerna och produktionsbygget för varje ändringsförslag.
 
 `npm run test:ui` bygger programmet och kontrollerar React-vyerna med en simulerad webbsida.
 Det kontrollerar formulär, delmoment, kalender, inköp, navigation och teman.
-Det ersätter inte en visuell kontroll på paddan.
+Det ersätter inte en visuell kontroll på enheten.
 
 ## Navigation och konto
 
@@ -134,7 +133,7 @@ Kontodelen i Inställningar visar kontrollfel och koppling av inloggningssätt.
 Dagsvyn börjar med Kvarvarande, följt av Färdiga och Alla.
 Håll inne en uppgift eller vara i ungefär en halv sekund och dra för att ordna listan.
 Delmoment kan flyttas inom sin huvuduppgift.
-Menyn innehåller även Flytta upp och Flytta ned för tangentbord och enklare användning.
+Fokusera raden och använd Alt + pil upp eller ned för omordning med tangentbord.
 Ordningen sparas i den aktiva tavlan och synkas för inloggade konton.
 Avbockade varor behåller sin plats i den valda ordningen.
 
@@ -153,4 +152,37 @@ Om lagringen inte fungerar visas ett meddelande och kopian fungerar medan sidan 
 Det krävs internet för att öppna sidan första gången. Ingen offline-PWA ingår ännu.
 QR-koden begränsas till 100 varor och en länk på högst 2200 tecken.
 Vid för stora listor visas ett fel; inga varor kapas bort.
-Testa skanning och långtryck på den faktiska paddan före normal användning.
+Testa skanning och långtryck på den faktiska enheten före normal användning.
+
+## Gemensam utformning och schemaval
+
+`src/styles.css` innehåller en gemensam standard för hela appen.
+Färger, avstånd, höjder och rundade hörn definieras som variabler i `:root`.
+Mörkt läge ändrar färgvariablerna, inte varje enskild komponent.
+Alla vanliga knappar, select-fält, textfält och datumfält får standarden automatiskt.
+Använd `primary`, `secondary` eller `danger` för knappens betydelse.
+Använd `iconbtn` för ikonknappar och `equal-actions` för två lika breda knappar.
+Använd `fieldgrid`, `inlinecontrols`, `stack` och `grow` för återkommande layout.
+Lägg inte till egna mått på ett enskilt fält när standarden kan användas.
+Native select behåller enhetens tillgängliga meny och använder samma utseende när den är stängd.
+Endast datadrivna mått, som framsteg och dragposition, sätts direkt på element.
+
+Loggans rad innehåller kontoknappen i högra hörnet.
+Tavlans namn kan ändras under Inställningar och sparas i `settings.homeName`.
+Gamla säkerhetskopior utan namn använder Hemma. Skärmlåsfunktionen är borttagen.
+
+Missade visar endast gårdagens ofärdiga tillfällen och börjar stängd.
+Radering från en daterad vy erbjuder antingen det enskilda tillfället eller hela uppgiften.
+Ett borttaget tillfälle använder den befintliga skip-listan och ändrar inte framtida scheman.
+Radering från Uppgifter gäller hela uppgiften eftersom den vyn saknar ett valt tillfälle.
+Ångra återställer raderingen så länge ingen senare ändring har gjorts.
+
+Veckodagsscheman har Var N:e vecka med ett helt antal veckor, minst 1.
+Befintliga intervall, inklusive fyra veckor, behålls utan omräkning.
+Varje månad fortsätter använda samma ordningsvecka i månaden som tidigare.
+Huset och Trädgård finns som kategorier före Annat.
+
+Vid långtryck följer en flytande kopia musen eller fingret.
+En linje visar placeringen innan användaren släpper.
+Escape, avbruten touch och tappat fönsterfokus avbryter dragningen utan att spara.
+Listan rullar vid kanten. Delmoment stannar inom sin huvuduppgift.

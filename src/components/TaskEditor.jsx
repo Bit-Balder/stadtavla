@@ -10,7 +10,8 @@ import {
   uid,
   weekday,
 } from "../domain/schedule.js";
-import { changeOrder } from "../domain/board.js";
+import Sortable from "./Sortable.jsx";
+import { reorderBefore } from "../domain/board.js";
 function SubFields({ sub, parent, onSave, onClose }) {
   const [draft, setDraft] = useState(() =>
     deep(sub || { id: uid(), name: "", notes: "", schedule: null }),
@@ -117,9 +118,9 @@ export default function TaskEditor({ task, date, onSave, onClose }) {
     if (draft.name.trim())
       onSave({ ...draft, name: draft.name.trim(), notes: draft.notes.trim() });
   }
-  function reorder(id, delta) {
+  function reorder(id, target, after) {
     const next = deep(draft);
-    changeOrder(next.subs, id, delta);
+    reorderBefore(next.subs, id, target, after);
     setDraft(next);
   }
   return (
@@ -159,6 +160,8 @@ export default function TaskEditor({ task, date, onSave, onClose }) {
                       "Vardagsrum",
                       "Hela hemmet",
                       "Tvätt",
+                      "Huset",
+                      "Trädgård",
                       "Annat",
                       draft.room,
                     ]),
@@ -198,29 +201,16 @@ export default function TaskEditor({ task, date, onSave, onClose }) {
             </button>
           </div>
           {draft.subs.map((sub, i) => (
-            <div className="sub-edit-row" key={sub.id}>
+            <Sortable
+              className="sub-edit-row"
+              key={sub.id}
+              id={sub.id}
+              group="draft-subs"
+              onMove={reorder}
+            >
               <button
                 type="button"
-                className="tinybtn"
-                aria-label="Flytta upp"
-                disabled={!i}
-                onClick={() => reorder(sub.id, -1)}
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                className="tinybtn"
-                aria-label="Flytta ned"
-                disabled={i === draft.subs.length - 1}
-                onClick={() => reorder(sub.id, 1)}
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                className="secondary"
-                style={{ flex: 1, textAlign: "left" }}
+                className="secondary grow text-left"
                 onClick={() => setSubEdit(sub)}
               >
                 {sub.name}
@@ -240,7 +230,7 @@ export default function TaskEditor({ task, date, onSave, onClose }) {
               >
                 ×
               </button>
-            </div>
+            </Sortable>
           ))}
           <div className="formactions">
             <button className="secondary" type="button" onClick={onClose}>
