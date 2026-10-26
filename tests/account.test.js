@@ -10,7 +10,7 @@ test("account controls wait for authentication and accept a future Google profil
     appType: "custom",
   });
   try {
-    const { AccountPanel, ProfileAvatar } = await server.ssrLoadModule(
+    const { AccountPanel, ProfileAvatar, ProfileMenu } = await server.ssrLoadModule(
       "/src/components/Account.jsx",
     );
     const { default: Navigation } = await server.ssrLoadModule(
@@ -47,8 +47,10 @@ test("account controls wait for authentication and accept a future Google profil
       onNavigate() {},
       onAccount() {},
     });
-    assert.match(navigation, /Mitt konto|Anna Svensson/);
-    assert.match(navigation, /profile\.png/);
+    assert.doesNotMatch(navigation, /profile\.png/);
+    const profile = render(ProfileMenu, {user, state: {mode: "local"}});
+    assert.match(profile, /profile\.png/);
+    assert.match(profile, /Öppna profilmenyn/);
     assert.match(navigation, /aria-current="page"/);
   } finally {
     await server.close();

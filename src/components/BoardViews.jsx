@@ -9,7 +9,6 @@ import {
   MONTHS,
   scheduleLabel,
   today,
-  uid,
   weekStart,
   weekday,
 } from "../domain/schedule.js";
@@ -63,13 +62,7 @@ export function Menu({ entity, date, actions }) {
             ...(actions.move
               ? [["Flytta", () => actions.move(entity.id, date)]]
               : []),
-            ...(actions.order
-              ? [
-                  ["Flytta upp", () => actions.order(entity.id, -1)],
-                  ["Flytta ned", () => actions.order(entity.id, 1)],
-                ]
-              : []),
-            ["Ta bort", () => actions.remove(entity.id)],
+            ["Ta bort", () => actions.remove(entity.id, date)],
           ].map(([label, fn]) => (
             <button
               key={label}
@@ -116,6 +109,7 @@ function Row({ entry, date, board, actions }) {
   );
 }
 export function DayView({ board, date, actions }) {
+  const [missedOpen, setMissedOpen] = useState(false);
   const all = dueEntries(board, date),
     p = progress(board, date),
     filter = actions.currentFilter || "remaining";
@@ -126,7 +120,7 @@ export function DayView({ board, date, actions }) {
   const groups = [...new Set(shown.map((e) => e.task.id))];
   const misses = [];
   if (fmt(date) === fmt(today()))
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 1; i <= 1; i++) {
       const past = advance(today(), -i);
       for (const entry of dueEntries(board, past))
         if (!completed(board, entry.id, past))
@@ -142,17 +136,34 @@ export function DayView({ board, date, actions }) {
         ]}
       />
       {!!misses.length && (
-        <section className="panel">
-          <div className="panelhead">
-            <h3>Missade uppgifter</h3>
+        <section className="panel missed-panel">
+          <button
+            className="disclosure"
+            aria-expanded={missedOpen}
+            aria-controls="missed-tasks"
+            onClick={() => setMissedOpen(!missedOpen)}
+          >
+            <span>Missade</span>
             <span className="pill warn">{misses.length}</span>
-          </div>
-          {misses.map(({ entry, date: past }) => (
-            <div className="taskgroup" key={`${entry.id}${fmt(past)}`}>
-              <div className="taskmeta">{dateLong(past)}</div>
-              <Row entry={entry} date={past} board={board} actions={actions} />
+            <span className="disclosure-arrow" aria-hidden="true">
+              {missedOpen ? "⌄" : "›"}
+            </span>
+          </button>
+          {missedOpen && (
+            <div id="missed-tasks">
+              {misses.map(({ entry, date: past }) => (
+                <div className="taskgroup" key={`${entry.id}${fmt(past)}`}>
+                  <div className="taskmeta">{dateLong(past)}</div>
+                  <Row
+                    entry={entry}
+                    date={past}
+                    board={board}
+                    actions={{ ...actions, reorder: undefined }}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </section>
       )}
       <section className="panel">
@@ -335,28 +346,6 @@ export function CalendarView({ board, date, monthly, onOpen }) {
   );
 }
 export function TasksView({ board, actions }) {
-  function orderButtons(entity, index, length) {
-    return (
-      <div className="reorder">
-        <button
-          className="tinybtn"
-          aria-label="Flytta upp"
-          disabled={!index}
-          onClick={() => actions.order(entity.id, -1)}
-        >
-          ↑
-        </button>
-        <button
-          className="tinybtn"
-          aria-label="Flytta ned"
-          disabled={index === length - 1}
-          onClick={() => actions.order(entity.id, 1)}
-        >
-          ↓
-        </button>
-      </div>
-    );
-  }
   return (
     <section className="panel">
       <div className="panelhead">
@@ -377,8 +366,7 @@ export function TasksView({ board, actions }) {
           onMove={actions.reorder}
         >
           <div className="manageitem">
-            {orderButtons(task, i, board.tasks.length)}
-            <div className="maintext" style={{ paddingLeft: 12 }}>
+            <div className="maintext">
               <div className="taskname">{task.name}</div>
               <div className="taskmeta">
                 {task.room} · {scheduleLabel(task)}
@@ -386,7 +374,7 @@ export function TasksView({ board, actions }) {
               </div>
               {task.notes && <div className="note-inline">{task.notes}</div>}
             </div>
-            <Menu entity={task} date={today()} actions={actions} />
+            <Menu entity={task} actions={actions} />
           </div>
           {task.subs.map((sub, j) => (
             <Sortable
@@ -394,10 +382,8 @@ export function TasksView({ board, actions }) {
               group={`subs-${task.id}`}
               onMove={actions.reorder}
               key={sub.id}
-              className="manageitem"
-              style={{ paddingLeft: 28 }}
+              className="manageitem sub-indent"
             >
-              {orderButtons(sub, j, task.subs.length)}
               <button className="taskhit" onClick={() => actions.edit(sub.id)}>
                 <span className="tasktext">
                   <span className="taskname">{sub.name}</span>
@@ -406,7 +392,7 @@ export function TasksView({ board, actions }) {
                   </span>
                 </span>
               </button>
-              <Menu entity={sub} date={today()} actions={actions} />
+              <Menu entity={sub} actions={actions} />
             </Sortable>
           ))}
           <button className="minibtn" onClick={() => actions.addSub(task.id)}>

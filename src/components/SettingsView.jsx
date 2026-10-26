@@ -7,7 +7,6 @@ export default function SettingsView({
   commit,
   replace,
   notify,
-  wake,
   mode,
   readOnly,
   user,
@@ -20,6 +19,13 @@ export default function SettingsView({
   onOpenLogin,
 }) {
   const input = useRef(null);
+  function saveName(event) {
+    event.preventDefault();
+    const name = event.currentTarget.elements.homeName.value.trim() || "Hemma.";
+    commit((s) => {
+      s.settings.homeName = name;
+    });
+  }
   function download() {
     const blob = new Blob([JSON.stringify(board, null, 2)], {
         type: "application/json",
@@ -50,9 +56,35 @@ export default function SettingsView({
   return (
     <>
       <section className="panel">
+        <h3>Tavlans namn</h3>
+        <form
+          className="inlinecontrols"
+          onSubmit={saveName}
+          key={board.settings.homeName || "Hemma."}
+        >
+          <label className="grow">
+            Namn
+            <input
+              name="homeName"
+              className="textinput"
+              maxLength={60}
+              defaultValue={board.settings.homeName || "Hemma."}
+              disabled={readOnly}
+              placeholder="Hemma."
+            />
+          </label>
+          <button className="primary" disabled={readOnly}>
+            Spara namn
+          </button>
+        </form>
+        <p className="caption">
+          Namnet följer med mellan dina enheter när du är inloggad.
+        </p>
+      </section>
+      <section className="panel">
         <h3>Utseende</h3>
         <p className="caption">
-          Automatiskt följer paddans inställning för ljust och mörkt läge.
+          Automatiskt följer enhetens inställning för ljust och mörkt läge.
         </p>
         <div className="settings-options">
           {[
@@ -76,19 +108,8 @@ export default function SettingsView({
           ))}
         </div>
       </section>
-      <section className="panel">
-        <h3>Skärm och navigation</h3>
-        <div className="switchrow">
-          <div>
-            <strong>Håll skärmen tänd</strong>
-            <p className="smallprint">
-              Funktionen beror på iPadens webbläsare.
-            </p>
-          </div>
-          <button className="secondary" onClick={wake.toggle}>
-            {wake.awake ? "På" : "Av"}
-          </button>
-        </div>
+      <section className="panel navigation-setting">
+        <h3>Navigation</h3>
         <div className="switchrow navigation-setting">
           <div>
             <strong>Dölj navigation</strong>

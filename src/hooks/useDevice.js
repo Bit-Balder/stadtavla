@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 export function useTheme(theme) {
   useEffect(() => {
     const query = window.matchMedia("(prefers-color-scheme: dark)");
@@ -25,37 +25,4 @@ export function useClock() {
     return () => clearInterval(timer);
   }, []);
   return now;
-}
-export function useWakeLock() {
-  const lock = useRef(null),
-    [awake, setAwake] = useState(false);
-  useEffect(
-    () => () => {
-      lock.current?.release().catch(() => {});
-    },
-    [],
-  );
-  async function toggle() {
-    if (lock.current) {
-      await lock.current.release();
-      lock.current = null;
-      setAwake(false);
-      return;
-    }
-    try {
-      if (!navigator.wakeLock) throw Error();
-      const next = await navigator.wakeLock.request("screen");
-      lock.current = next;
-      setAwake(true);
-      next.addEventListener("release", () => {
-        lock.current = null;
-        setAwake(false);
-      });
-    } catch {
-      alert(
-        "Kan inte hålla skärmen tänd här. Använd iPadens inställning för Autolås.",
-      );
-    }
-  }
-  return { awake, toggle };
 }

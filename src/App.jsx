@@ -1,7 +1,7 @@
 import ShoppingView from "./components/ShoppingView.jsx";
 import { useEffect, useRef, useState } from "react";
 import { useBoard } from "./hooks/useBoard.js";
-import { useClock, useTheme, useWakeLock } from "./hooks/useDevice.js";
+import { useClock, useTheme } from "./hooks/useDevice.js";
 import {
   advance,
   dateLong,
@@ -14,7 +14,8 @@ import {
   weekStart,
 } from "./domain/schedule.js";
 import {
-  changeOrder,
+  skipOccurrence,
+  deleteTask,
   reorderBefore,
   completed,
   findEntity,
@@ -92,7 +93,6 @@ export default function App({
     [toast, setToast] = useState(""),
     [accountOpen, setAccountOpen] = useState(false);
   const now = useClock(),
-    wake = useWakeLock(),
     lastDay = useRef(fmt(today()));
   useTheme(board?.theme || "light");
   useEffect(() => {
@@ -195,29 +195,8 @@ export default function App({
         date: day || date,
         revision: data.revision,
       }),
-    remove: (id) => {
-      const entity = findEntity(board, id);
-      if (
-        !entity ||
-        !confirm(
-          `Ta bort ${entity.sub ? "delmomentet" : "uppgiften"} och dess historik?`,
-        )
-      )
-        return;
-      commit((s) => {
-        const e = findEntity(s, id);
-        const ids = e.sub ? [id] : [id, ...e.task.subs.map((x) => x.id)];
-        if (e.sub) e.task.subs = e.task.subs.filter((x) => x.id !== id);
-        else s.tasks = s.tasks.filter((x) => x.id !== id);
-        removeEntities(s, ids);
-      });
-      notify("Uppgiften togs bort.");
-    },
-    order: (id, delta) =>
-      commit((s) => {
-        const e = findEntity(s, id);
-        changeOrder(e.sub ? e.task.subs : s.tasks, id, delta);
-      }),
+    remove: (id, day) =>
+      setEditor({ type: "delete", id, date: day, revision: data.revision }),
   };
   const hasDate = ["day", "week", "month"].includes(page);
   function changeDate(step) {
@@ -254,6 +233,24 @@ export default function App({
   }
   return (
     <>
+      <header className="brandbar">
+        <div className="brand">
+          <div className="brand-mark" aria-hidden="true">
+            ⌂
+          </div>
+          <div className="brand-copy">
+            <h1>{board.settings.homeName || "Hemma."}</h1>
+            <small>Vår städtavla</small>
+          </div>
+        </div>
+        <ProfileMenu
+          user={user}
+          state={data}
+          onSignIn={() => setAccountOpen(true)}
+          onAccount={() => setAccountOpen(true)}
+          onSignOut={handleSignOut}
+        />
+      </header>
       <div
         id="app"
         className={board.settings.collapsed ? "sidebar-hidden" : ""}
@@ -261,8 +258,6 @@ export default function App({
         <Navigation
           pages={pages}
           page={page}
-          user={user}
-          onAccount={() => setAccountOpen(true)}
           onNavigate={(key) => {
             setPage(key);
             setToast("");
@@ -297,13 +292,6 @@ export default function App({
               </div>
             </div>
             <div className="top-tools">
-              <ProfileMenu
-                user={user}
-                state={data}
-                onSignIn={() => setAccountOpen(true)}
-                onAccount={() => setAccountOpen(true)}
-                onSignOut={handleSignOut}
-              />
               <span className="clock">
                 {now.toLocaleTimeString("sv-SE", {
                   hour: "2-digit",
@@ -387,7 +375,6 @@ export default function App({
               commit={commit}
               replace={replace}
               notify={notify}
-              wake={wake}
               mode={data.mode}
               readOnly={readOnly}
               user={user}
@@ -421,6 +408,53 @@ export default function App({
             ×
           </button>
         </div>
+      )}
+      {editor?.type === "delete" && (
+        <Modal title="Ta bort uppgift" onClose={() => setEditor(null)}>
+          <p className="caption">
+            {(
+              findEntity(board, editor.id)?.sub ||
+              findEntity(board, editor.id)?.task
+            )?.name || "Uppgiften finns inte längre."}
+          </p>
+          <div className="stack">
+            {editor.date && (
+              <button
+                className="secondary"
+                onClick={() => {
+                  if (!editorCurrent()) return;
+                  commit((s) => skipOccurrence(s, editor.id, editor.date));
+                  setEditor(null);
+                  notify("Tillfället togs bort.");
+                }}
+              >
+                Ta bort bara detta tillfälle
+              </button>
+            )}
+            {editor.date && (
+              <p className="smallprint">
+                Gäller {dateLong(editor.date)}. Framtida tillfällen finns kvar.
+              </p>
+            )}
+            <button
+              className="danger"
+              onClick={() => {
+                if (!editorCurrent()) return;
+                commit((s) => deleteTask(s, editor.id));
+                setEditor(null);
+                notify("Uppgiften togs bort.");
+              }}
+            >
+              Ta bort uppgiften helt
+            </button>
+            <p className="smallprint">
+              Tar bort uppgiften, dess delmoment och historik.
+            </p>
+            <button className="secondary" onClick={() => setEditor(null)}>
+              Avbryt
+            </button>
+          </div>
+        </Modal>
       )}
       {editor?.type === "task" && (
         <TaskEditor

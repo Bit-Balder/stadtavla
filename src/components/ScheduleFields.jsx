@@ -1,9 +1,16 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import DatePicker from "./DatePicker.jsx";
 import { DAYS } from "../domain/schedule.js";
 export function validateSchedule(plan) {
   if (plan.type === "weekly" && !plan.days.length)
     return "Välj minst en veckodag.";
+  if (
+    plan.type === "weekly" &&
+    plan.weekRepeat !== "month" &&
+    (!Number.isSafeInteger(Number(plan.weekRepeat ?? 1)) ||
+      Number(plan.weekRepeat ?? 1) < 1)
+  )
+    return "Välj ett helt antal veckor, minst 1.";
   if (
     plan.type === "interval" &&
     (!Number.isInteger(+plan.eachN) || +plan.eachN < 1 || +plan.eachN > 365)
@@ -22,6 +29,9 @@ export function validateSchedule(plan) {
 }
 export default function ScheduleFields({ value, onChange }) {
   const id = useId();
+  const [customRepeat, setCustomRepeat] = useState(
+    Number(value.weekRepeat) > 3,
+  );
   const set = (key, next) => onChange({ ...value, [key]: next });
   return (
     <>
@@ -79,24 +89,30 @@ export default function ScheduleFields({ value, onChange }) {
           <div className="fieldgrid cadence-grid">
             <div className="fieldblock">
               <label className="field" htmlFor={`${id}-repeat`}>
-                Upprepning
+                Hur ofta
               </label>
               <span className="select-wrap">
                 <select
                   id={`${id}-repeat`}
-                  value={value.weekRepeat || 1}
-                  onChange={(e) =>
+                  value={customRepeat ? "custom" : value.weekRepeat || 1}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setCustomRepeat(next === "custom");
                     set(
                       "weekRepeat",
-                      e.target.value === "month" ? "month" : +e.target.value,
-                    )
-                  }
+                      next === "custom"
+                        ? Number(value.weekRepeat) || 4
+                        : next === "month"
+                          ? "month"
+                          : Number(next),
+                    );
+                  }}
                 >
                   {[
                     [1, "Varje vecka"],
                     [2, "Varannan vecka"],
                     [3, "Var tredje vecka"],
-                    [4, "Var fjärde vecka"],
+                    ["custom", "Var N:e vecka"],
                     ["month", "Varje månad"],
                   ].map(([key, label]) => (
                     <option key={key} value={key}>
@@ -106,6 +122,28 @@ export default function ScheduleFields({ value, onChange }) {
                 </select>
               </span>
             </div>
+            {customRepeat && (
+              <div className="fieldblock">
+                <label className="field" htmlFor={`${id}-weeks`}>
+                  Antal veckor
+                </label>
+                <input
+                  id={`${id}-weeks`}
+                  className="textinput"
+                  type="number"
+                  min="1"
+                  step="1"
+                  required
+                  value={value.weekRepeat}
+                  onChange={(e) =>
+                    set(
+                      "weekRepeat",
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    )
+                  }
+                />
+              </div>
+            )}
             <DatePicker
               label="Börjar vecka med"
               value={value.weekAnchor}

@@ -105,7 +105,12 @@ export function defaults() {
     done: {},
     shopping: [],
     theme: "light",
-    settings: { collapsed: false, filter: "remaining", expanded: {}, awake: false },
+    settings: {
+      collapsed: false,
+      filter: "remaining",
+      expanded: {},
+      homeName: "Hemma.",
+    },
     moves: [],
     skips: [],
   };
@@ -133,6 +138,11 @@ export function normalize(x) {
       ? x.settings.filter
       : "remaining";
   x.settings.collapsed = !!x.settings.collapsed;
+  x.settings.homeName =
+    typeof x.settings.homeName === "string" && x.settings.homeName.trim()
+      ? x.settings.homeName.trim().slice(0, 60)
+      : "Hemma.";
+  delete x.settings.awake;
   x.moves = Array.isArray(x.moves) ? x.moves : [];
   x.skips = Array.isArray(x.skips) ? x.skips : [];
   x.tasks.forEach(function (t) {
