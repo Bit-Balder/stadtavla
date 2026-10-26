@@ -11,6 +11,14 @@ import {
   signInWithPopup,
   signOut,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  EmailAuthProvider,
+  linkWithCredential,
+  linkWithPopup,
+  reauthenticateWithPopup,
 } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 export const firebaseConfig = {
@@ -47,3 +55,34 @@ export function login() {
 export function logout() {
   return signOut(auth);
 }
+
+// Passwords go directly to Firebase Auth and are never stored by the board.
+auth.languageCode = "sv";
+export const emailLogin = (email, password) =>
+  signInWithEmailAndPassword(auth, email.trim(), password);
+export async function register(email, password) {
+  const result = await createUserWithEmailAndPassword(
+    auth,
+    email.trim(),
+    password,
+  );
+  await sendEmailVerification(result.user);
+}
+export const resetPassword = (email) =>
+  sendPasswordResetEmail(auth, email.trim());
+export const verifyEmail = () => sendEmailVerification(auth.currentUser);
+export async function addPassword(password) {
+  const user = auth.currentUser;
+  if (
+    !user?.email ||
+    !user.providerData.some((p) => p.providerId === "google.com")
+  )
+    throw Error("Logga in med Google först.");
+  await reauthenticateWithPopup(user, new GoogleAuthProvider());
+  return linkWithCredential(
+    user,
+    EmailAuthProvider.credential(user.email, password),
+  );
+}
+export const addGoogle = () =>
+  linkWithPopup(auth.currentUser, new GoogleAuthProvider());

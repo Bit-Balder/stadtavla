@@ -78,9 +78,9 @@ Utan inloggning fungerar lokal lagring som tidigare.
 Första inloggningen kräver ett uttryckligt val innan lokala uppgifter förs över.
 Molnuppgifter och lokala uppgifter hålls åtskilda.
 Varje konto får endast läsa och ändra sina egna uppgifter.
-Synkning sker mellan enheter som använder samma Google-konto.
+Synkning sker mellan enheter som använder samma konto.
 Vid samtidiga ändringar stoppar versionskontrollen en tyst överskrivning.
-Länkar för delning och gemensamma hushåll återstår som nästa steg.
+Gemensamma hushåll återstår som nästa steg. QR-delning överför en separat kopia.
 
 ## Nästa steg: PWA
 
@@ -120,7 +120,37 @@ Inställningar innehåller också en egen del för kontot.
 
 `AuthApp` kopplar Firebase-kontot och inloggningsfunktionerna till `App`.
 `user` använder fälten `displayName`, `email` och `photoURL` från Firebase Authentication.
-Liggande vy och större skärmar visar en profilcirkel till vänster om loggans text.
-Profilcirkeln använder initialer om bilden saknas eller inte kan laddas.
-Kontodelen visar Google-inloggning, profilbild och utloggning.
+Sidhuvudet visar en profilknapp till höger efter inloggning.
+Profilcirkeln använder en profilsymbol om bilden saknas eller inte kan laddas.
+Kontodelen visar inloggning, profilbild, kontokoppling och utloggning.
 Överföring av lokala uppgifter kräver ett uttryckligt val.
+
+## Konto, inköp och QR-kopia
+
+Logga in öppnar en popup för e-post och lösenord, återställning, Google och registrering.
+Profilmenyn visar konto, synkstatus och utloggning.
+Kontodelen i Inställningar visar kontrollfel och koppling av inloggningssätt.
+
+Dagsvyn börjar med Kvarvarande, följt av Färdiga och Alla.
+Håll inne en uppgift eller vara i ungefär en halv sekund och dra för att ordna listan.
+Delmoment kan flyttas inom sin huvuduppgift.
+Menyn innehåller även Flytta upp och Flytta ned för tangentbord och enklare användning.
+Ordningen sparas i den aktiva tavlan och synkas för inloggade konton.
+Avbockade varor behåller sin plats i den valda ordningen.
+
+Inköp har frivilligt pris, butik, typ och kampanjdatum under Fler uppgifter.
+Denna vecka sparar konkreta datum från måndag till söndag.
+Redigering och radering finns i varans meny.
+Ångra visas vid radering. En senare ändring stänger den gamla notisen.
+
+Visa QR-kod skapar en komprimerad kopia av hela inköpslistan, inklusive avbockade varor.
+Mobilen öppnar en separat sida utan navigation eller Firebase.
+Listan ligger i länkens fragment och skickas inte som frågeparameter till webbservern.
+Alla som har länken eller QR-koden kan läsa kopian.
+Kopian skriver aldrig över mobilens vanliga tavla.
+Mobilen sparar avbockningar för den senast öppnade kopian separat i localStorage.
+Om lagringen inte fungerar visas ett meddelande och kopian fungerar medan sidan är öppen.
+Det krävs internet för att öppna sidan första gången. Ingen offline-PWA ingår ännu.
+QR-koden begränsas till 100 varor och en länk på högst 2200 tecken.
+Vid för stora listor visas ett fel; inga varor kapas bort.
+Testa skanning och långtryck på den faktiska paddan före normal användning.

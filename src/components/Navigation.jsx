@@ -70,15 +70,6 @@ export default function Navigation({
   return (
     <aside className="sidebar">
       <div className="brand">
-        {user && (
-          <button
-            className="brand-profile"
-            aria-label="Öppna ditt konto"
-            onClick={onAccount}
-          >
-            <ProfileAvatar user={user} />
-          </button>
-        )}
         <div className="brand-mark" aria-hidden="true">
           ⌂
         </div>

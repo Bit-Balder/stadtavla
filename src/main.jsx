@@ -1,3 +1,4 @@
+import ShoppingCopy from "./components/ShoppingShare.jsx";
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
@@ -42,6 +43,10 @@ function Bootstrap() {
 }
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <Bootstrap />
+    {window.location.hash.startsWith("#shopping=") ? (
+      <ShoppingCopy encoded={window.location.hash.slice(10)} />
+    ) : (
+      <Bootstrap />
+    )}
   </StrictMode>,
 );

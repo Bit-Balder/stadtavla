@@ -141,7 +141,7 @@ function submit(selector) {
       "Inloggningen är inte tillgänglig",
     ),
   );
-  assert.equal(query('[role="dialog"] .account-action').disabled, true);
+  assert.equal(query('[role="dialog"] .account-action').matches(":disabled"), true);
   query('[aria-label="Stäng"]').click();
   await tick();
   click("Mörkt");

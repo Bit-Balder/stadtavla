@@ -1,3 +1,4 @@
+import CloudStatus from "./CloudStatus.jsx";
 import { useRef } from "react";
 import { AccountPanel } from "./Account.jsx";
 import { fmt, normalize, today } from "../domain/schedule.js";
@@ -12,6 +13,11 @@ export default function SettingsView({
   user,
   onSignIn,
   onSignOut,
+  authError,
+  authLoading,
+  authActions,
+  cloudState,
+  onOpenLogin,
 }) {
   const input = useRef(null);
   function download() {
@@ -136,13 +142,28 @@ export default function SettingsView({
       </section>
       <section className="panel account-settings">
         <h3>Mitt konto</h3>
-        <AccountPanel user={user} onSignIn={onSignIn} onSignOut={onSignOut} />
+        {authLoading && <p role="status">Kontrollerar inloggning…</p>}
+        {authError && (
+          <p className="notice" role="alert">
+            {authError}
+          </p>
+        )}
+        <AccountPanel
+          user={user}
+          onSignIn={onSignIn}
+          onSignOut={onSignOut}
+          authActions={authActions}
+          onOpenLogin={onOpenLogin}
+        />
+        {cloudState && !cloudState.needsSetup && (
+          <CloudStatus state={cloudState} />
+        )}
       </section>
       <section className="panel">
         <h3>Om tavlan</h3>
         <p className="caption">
           {mode === "cloud"
-            ? "Städtavlan 3.1 · Uppgifterna sparas i ditt Google-kontos molnlagring."
+            ? "Städtavlan 3.1 · Uppgifterna sparas i ditt kontos molnlagring."
             : "Städtavlan 3.1 · Data sparas på den här enheten."}
         </p>
       </section>

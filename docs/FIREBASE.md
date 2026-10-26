@@ -183,3 +183,23 @@ Lägg aldrig privata administratörsnycklar i `VITE_`-variabler.
 Framtida nycklar ska sparas i Secrets och aldrig skrivas direkt i källkoden.
 Privata nycklar får endast användas på servern.
 Google Analytics används fortfarande inte.
+
+## E-post och lösenord
+
+Aktivera Email/Password under Authentication → Sign-in method.
+Email link behöver inte aktiveras.
+Inloggningsrutan innehåller e-post, lösenord, återställning och Google-inloggning.
+Registrering skickar ett bekräftelsemejl.
+Kontodelen visar en knapp för att skicka mejlet igen när adressen saknar bekräftelse.
+Firebase lagrar lösenorden. Appen lagrar dem aldrig i tavlan eller localStorage.
+
+Ett befintligt Google-konto kan lägga till lösenordsinloggning under Mitt konto.
+Användaren bekräftar sitt Google-konto innan lösenordet kopplas.
+Ett lösenordskonto kan koppla Google under samma kontodel.
+Kopplingen behåller användarens UID och molnuppgifter.
+Om inloggningen redan tillhör ett annat konto stoppas kopplingen.
+Appen slår aldrig ihop två olika kontons uppgifter automatiskt.
+
+Testa registrering, bekräftelsemejl, återställning och båda inloggningssätten efter publicering.
+Kontrollera också att koppling av inloggningssätt behåller städuppgifter och inköpslista.
+Databasreglerna använder UID och kräver ingen ändring för dessa inloggningssätt.

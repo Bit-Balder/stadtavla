@@ -1,3 +1,4 @@
+import ShoppingView from "./components/ShoppingView.jsx";
 import { useEffect, useRef, useState } from "react";
 import { useBoard } from "./hooks/useBoard.js";
 import { useClock, useTheme, useWakeLock } from "./hooks/useDevice.js";
@@ -14,25 +15,21 @@ import {
 } from "./domain/schedule.js";
 import {
   changeOrder,
+  reorderBefore,
   completed,
   findEntity,
   moveOccurrence,
   removeEntities,
   setDone,
 } from "./domain/board.js";
-import {
-  CalendarView,
-  DayView,
-  ShoppingView,
-  TasksView,
-} from "./components/BoardViews.jsx";
+import { CalendarView, DayView, TasksView } from "./components/BoardViews.jsx";
 import SettingsView from "./components/SettingsView.jsx";
 import TaskEditor, { SubEditor } from "./components/TaskEditor.jsx";
 import Modal from "./components/Modal.jsx";
 import DatePicker from "./components/DatePicker.jsx";
 import Navigation from "./components/Navigation.jsx";
 import CloudStatus from "./components/CloudStatus.jsx";
-import { AccountDialog } from "./components/Account.jsx";
+import { AccountDialog, ProfileMenu } from "./components/Account.jsx";
 const pages = [
   ["day", "Dag", "Dagens städning"],
   ["week", "Vecka", "Veckoplanering"],
@@ -74,10 +71,21 @@ export default function App({
   cloudRepository,
   authError,
   authLoading,
+  authActions,
 }) {
   const data = useBoard({ cloudRepository, user });
-  const { board, error, loadFailed, commit, replace, undo } = data;
+  const { board, error, loadFailed, undo } = data;
+  // Any later edit invalidates the single-step undo toast.
+  function commit(change) {
+    setToast("");
+    data.commit(change);
+  }
+  function replace(next) {
+    setToast("");
+    data.replace(next);
+  }
   const readOnly = data.mode === "cloud" && (data.blocked || data.needsSetup);
+  const [filter, setFilter] = useState("remaining");
   const [page, setPage] = useState("day"),
     [date, setDate] = useState(today),
     [editor, setEditor] = useState(null),
@@ -164,15 +172,21 @@ export default function App({
       }),
     toggle: (id, day) => {
       commit((s) => setDone(s, id, day, !completed(s, id, day)));
-      notify("Uppgiften uppdaterad.");
     },
     expand: (id) =>
       commit((s) => {
         s.settings.expanded[id] = s.settings.expanded[id] === false;
       }),
-    filter: (value) =>
+    currentFilter: filter,
+    filter: setFilter,
+    reorder: (id, target, after) =>
       commit((s) => {
-        s.settings.filter = value;
+        const from = findEntity(s, id),
+          to = findEntity(s, target);
+        if (!from || !to) return;
+        if (!from.sub && !to.sub) reorderBefore(s.tasks, id, target, after);
+        else if (from.sub && to.sub && from.task.id === to.task.id)
+          reorderBefore(from.task.subs, id, target, after);
       }),
     move: (id, day) =>
       setEditor({
@@ -237,7 +251,6 @@ export default function App({
       } else s.tasks.push(deep(task));
     });
     setEditor(null);
-    notify("Uppgiften sparades.");
   }
   return (
     <>
@@ -284,6 +297,13 @@ export default function App({
               </div>
             </div>
             <div className="top-tools">
+              <ProfileMenu
+                user={user}
+                state={data}
+                onSignIn={() => setAccountOpen(true)}
+                onAccount={() => setAccountOpen(true)}
+                onSignOut={handleSignOut}
+              />
               <span className="clock">
                 {now.toLocaleTimeString("sv-SE", {
                   hour: "2-digit",
@@ -323,17 +343,13 @@ export default function App({
               {error}
             </div>
           )}
-          {authError && (
-            <div className="notice" role="alert">
-              {authError}
-            </div>
-          )}
-          {authLoading && (
-            <p className="smallprint" role="status">
-              Kontrollerar inloggning…
+          {data.needsSetup && <CloudStatus state={data} />}
+          {data.blocked && !data.needsSetup && (
+            <p className="notice">
+              Molnlagringen behöver din uppmärksamhet. Öppna profilmenyn för att
+              fortsätta.
             </p>
           )}
-          <CloudStatus state={data} />
           <fieldset className="board-content" disabled={readOnly}>
             {page === "day" && (
               <DayView board={board} date={date} actions={actions} />
@@ -351,11 +367,22 @@ export default function App({
             )}
             {page === "tasks" && <TasksView board={board} actions={actions} />}
             {page === "shopping" && (
-              <ShoppingView board={board} commit={commit} notify={notify} />
+              <ShoppingView
+                board={board}
+                commit={commit}
+                notify={notify}
+                revision={data.revision}
+                cloud={data.mode === "cloud"}
+              />
             )}
           </fieldset>
           {page === "settings" && (
             <SettingsView
+              authError={authError}
+              authLoading={authLoading}
+              authActions={authActions}
+              cloudState={data}
+              onOpenLogin={() => setAccountOpen(true)}
               board={board}
               commit={commit}
               replace={replace}
@@ -372,6 +399,7 @@ export default function App({
       </div>
       {accountOpen && (
         <AccountDialog
+          authActions={authActions}
           user={user}
           onSignIn={onSignIn}
           onSignOut={onSignOut ? handleSignOut : undefined}
@@ -416,7 +444,6 @@ export default function App({
                 : [...task.subs, sub];
             });
             setEditor(null);
-            notify("Delmomentet sparades.");
           }}
         />
       )}
