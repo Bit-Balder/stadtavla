@@ -105,7 +105,7 @@ export function defaults() {
     done: {},
     shopping: [],
     theme: "light",
-    settings: { collapsed: false, filter: "all", expanded: {}, awake: false },
+    settings: { collapsed: false, filter: "remaining", expanded: {}, awake: false },
     moves: [],
     skips: [],
   };
@@ -131,7 +131,7 @@ export function normalize(x) {
   x.settings.filter =
     ["all", "remaining", "done"].indexOf(x.settings.filter) >= 0
       ? x.settings.filter
-      : "all";
+      : "remaining";
   x.settings.collapsed = !!x.settings.collapsed;
   x.moves = Array.isArray(x.moves) ? x.moves : [];
   x.skips = Array.isArray(x.skips) ? x.skips : [];

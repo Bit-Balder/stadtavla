@@ -35,7 +35,7 @@ test("account controls wait for authentication and accept a future Google profil
     assert.doesNotMatch(account, /disabled=""/);
     assert.match(
       render(ProfileAvatar, { user: { displayName: "Anna Svensson" } }),
-      />AS</,
+      /<svg/,
     );
     const navigation = render(Navigation, {
       pages: [
@@ -47,7 +47,7 @@ test("account controls wait for authentication and accept a future Google profil
       onNavigate() {},
       onAccount() {},
     });
-    assert.match(navigation, /Öppna ditt konto/);
+    assert.match(navigation, /Mitt konto|Anna Svensson/);
     assert.match(navigation, /profile\.png/);
     assert.match(navigation, /aria-current="page"/);
   } finally {

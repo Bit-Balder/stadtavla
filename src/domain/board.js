@@ -96,3 +96,12 @@ export function updateBoard(state, change) {
   change(next);
   return next;
 }
+
+export function reorderBefore(list, id, targetId, after = false) {
+  const from = list.findIndex((x) => x.id === id);
+  if (id === targetId || from < 0 || !list.some((x) => x.id === targetId))
+    return;
+  const [item] = list.splice(from, 1);
+  const to = list.findIndex((x) => x.id === targetId);
+  list.splice(to + (after ? 1 : 0), 0, item);
+}

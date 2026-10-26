@@ -1,3 +1,4 @@
+import { authMessage } from "./messages.js";
 import { useEffect, useMemo, useState } from "react";
 import App from "../App.jsx";
 import { createCloudRepository } from "../storage/cloudRepository.js";
@@ -7,6 +8,12 @@ import {
   logout,
   watchUser,
   verifyAppCheck,
+  emailLogin,
+  register,
+  resetPassword,
+  verifyEmail,
+  addPassword,
+  addGoogle,
 } from "./client.js";
 export default function AuthApp() {
   const [user, setUser] = useState(null),
@@ -52,34 +59,33 @@ export default function AuthApp() {
       unsubscribe?.();
     };
   }, []);
-  async function signIn() {
+  async function perform(action, ...args) {
     try {
       setError("");
-      await login();
+      await action(...args);
     } catch (e) {
-      if (
-        e.code === "auth/popup-closed-by-user" ||
-        e.code === "auth/cancelled-popup-request"
-      )
-        return;
-      const message =
-        e.code === "auth/unauthorized-domain"
-          ? "Lägg till bit-balder.github.io under tillåtna domäner i Firebase Authentication."
-          : e.code === "auth/popup-blocked"
-            ? "Tillåt popupfönster för sidan och försök igen."
-            : e.code === "auth/operation-not-allowed"
-              ? "Aktivera Google under Firebase Authentication → Sign-in method."
-              : "Kunde inte logga in. Kontrollera anslutningen och försök igen.";
+      const message = authMessage(e);
       setError(message);
       throw Error(message);
     }
   }
+  const authActions = ready
+    ? {
+        email: (email, password) => perform(emailLogin, email, password),
+        register: (email, password) => perform(register, email, password),
+        reset: (email) => perform(resetPassword, email),
+        verify: () => perform(verifyEmail),
+        password: (password) => perform(addPassword, password),
+        google: () => perform(addGoogle),
+      }
+    : undefined;
   return (
     <App
       key={user?.uid || "guest"}
       user={user}
       cloudRepository={repository}
-      onSignIn={ready ? signIn : undefined}
+      onSignIn={ready ? () => perform(login) : undefined}
+      authActions={authActions}
       onSignOut={logout}
       authError={error}
       authLoading={checking}

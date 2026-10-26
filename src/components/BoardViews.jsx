@@ -1,3 +1,4 @@
+import Sortable from "./Sortable.jsx";
 import { useState } from "react";
 import {
   advance,
@@ -59,7 +60,15 @@ export function Menu({ entity, date, actions }) {
         <div className="dropdown">
           {[
             ["Redigera", () => actions.edit(entity.id)],
-            ["Flytta", () => actions.move(entity.id, date)],
+            ...(actions.move
+              ? [["Flytta", () => actions.move(entity.id, date)]]
+              : []),
+            ...(actions.order
+              ? [
+                  ["Flytta upp", () => actions.order(entity.id, -1)],
+                  ["Flytta ned", () => actions.order(entity.id, 1)],
+                ]
+              : []),
             ["Ta bort", () => actions.remove(entity.id)],
           ].map(([label, fn]) => (
             <button
@@ -82,7 +91,12 @@ function Row({ entry, date, board, actions }) {
   const entity = entry.sub || entry.task,
     done = completed(board, entry.id, date);
   return (
-    <div className="taskrow">
+    <Sortable
+      id={entity.id}
+      group={entry.sub ? `subs-${entry.task.id}` : "tasks"}
+      onMove={actions.reorder}
+      className="taskrow"
+    >
       <button
         className="taskhit"
         aria-pressed={done}
@@ -98,13 +112,13 @@ function Row({ entry, date, board, actions }) {
         </span>
       </button>
       <Menu entity={entity} date={date} actions={actions} />
-    </div>
+    </Sortable>
   );
 }
 export function DayView({ board, date, actions }) {
   const all = dueEntries(board, date),
     p = progress(board, date),
-    filter = board.settings.filter;
+    filter = actions.currentFilter || "remaining";
   const shown = all.filter(
     (e) =>
       filter === "all" || completed(board, e.id, date) === (filter === "done"),
@@ -165,9 +179,9 @@ export function DayView({ board, date, actions }) {
         </div>
         <div className="filterbar">
           {[
-            ["all", "Alla"],
             ["remaining", "Kvarvarande"],
             ["done", "Färdiga"],
+            ["all", "Alla"],
           ].map(([key, label]) => (
             <button
               key={key}
@@ -204,7 +218,13 @@ export function DayView({ board, date, actions }) {
             done = taskAll.filter((e) => completed(board, e.id, date)).length,
             expanded = board.settings.expanded[id] !== false;
           return (
-            <div className="taskgroup" key={id}>
+            <Sortable
+              className="taskgroup"
+              key={id}
+              id={id}
+              group="tasks"
+              onMove={actions.reorder}
+            >
               <div className="taskrow">
                 <button
                   className="taskhit"
@@ -245,7 +265,7 @@ export function DayView({ board, date, actions }) {
                   </button>
                 </div>
               )}
-            </div>
+            </Sortable>
           );
         })}
         <Progress {...p} />
@@ -350,7 +370,12 @@ export function TasksView({ board, actions }) {
         </button>
       </div>
       {board.tasks.map((task, i) => (
-        <div key={task.id}>
+        <Sortable
+          key={task.id}
+          id={task.id}
+          group="tasks"
+          onMove={actions.reorder}
+        >
           <div className="manageitem">
             {orderButtons(task, i, board.tasks.length)}
             <div className="maintext" style={{ paddingLeft: 12 }}>
@@ -364,7 +389,10 @@ export function TasksView({ board, actions }) {
             <Menu entity={task} date={today()} actions={actions} />
           </div>
           {task.subs.map((sub, j) => (
-            <div
+            <Sortable
+              id={sub.id}
+              group={`subs-${task.id}`}
+              onMove={actions.reorder}
               key={sub.id}
               className="manageitem"
               style={{ paddingLeft: 28 }}
@@ -379,111 +407,14 @@ export function TasksView({ board, actions }) {
                 </span>
               </button>
               <Menu entity={sub} date={today()} actions={actions} />
-            </div>
+            </Sortable>
           ))}
           <button className="minibtn" onClick={() => actions.addSub(task.id)}>
             + Delmoment
           </button>
-        </div>
+        </Sortable>
       ))}
       {!board.tasks.length && <div className="empty">Inga uppgifter ännu.</div>}
     </section>
-  );
-}
-export function ShoppingView({ board, commit, notify }) {
-  const [name, setName] = useState(""),
-    left = board.shopping.filter((s) => !s.done).length;
-  return (
-    <>
-      <Stats
-        items={[
-          ["KVAR ATT KÖPA", left],
-          ["I LISTAN", board.shopping.length],
-          ["KLARA", board.shopping.length - left],
-        ]}
-      />
-      <section className="panel">
-        <div className="panelhead">
-          <h3>Handla</h3>
-          <button
-            className="minibtn"
-            onClick={() => {
-              if (confirm("Rensa alla köpta varor?")) {
-                commit((s) => {
-                  s.shopping = s.shopping.filter((x) => !x.done);
-                });
-                notify("Köpta varor rensade.");
-              }
-            }}
-          >
-            Rensa köpta
-          </button>
-        </div>
-        <form
-          className="listcontrols"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (name.trim()) {
-              commit((s) =>
-                s.shopping.push({ id: uid(), name: name.trim(), done: false }),
-              );
-              setName("");
-            }
-          }}
-        >
-          <input
-            className="textinput"
-            aria-label="Ny vara"
-            required
-            maxLength={100}
-            placeholder="Lägg till en vara"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <button className="primary">Lägg till</button>
-        </form>
-        {[...board.shopping]
-          .sort((a, b) => Number(a.done) - Number(b.done))
-          .map((item) => (
-            <div className="taskrow" key={item.id}>
-              <button
-                className="taskhit"
-                aria-pressed={item.done}
-                onClick={() => {
-                  commit((s) => {
-                    const target = s.shopping.find((x) => x.id === item.id);
-                    target.done = !target.done;
-                  });
-                  notify("Inköpslistan uppdaterad.");
-                }}
-              >
-                <span className={`checkmark ${item.done ? "done" : ""}`}>
-                  ✓
-                </span>
-                <span className={`taskname ${item.done ? "done" : ""}`}>
-                  {item.name}
-                </span>
-              </button>
-              <button
-                className="morebtn danger"
-                aria-label={`Ta bort ${item.name}`}
-                onClick={() => {
-                  if (confirm("Ta bort varan?")) {
-                    commit((s) => {
-                      s.shopping = s.shopping.filter((x) => x.id !== item.id);
-                    });
-                    notify("Varan togs bort.");
-                  }
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        {!board.shopping.length && (
-          <div className="empty">Inköpslistan är tom.</div>
-        )}
-      </section>
-    </>
   );
 }
