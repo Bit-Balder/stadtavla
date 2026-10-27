@@ -181,6 +181,19 @@ export default function SettingsView({
         )}
       </section>
       <section className="panel">
+        <h3>Uppdatera sidan</h3>
+        <p className="caption">
+          Ladda om sidan för att hämta publicerade uppdateringar, även i helskärmsläge.
+        </p>
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => window.location.reload()}
+        >
+          Uppdatera sidan
+        </button>
+      </section>
+      <section className="panel">
         <h3>Om tavlan</h3>
         <p className="caption">
           {mode === "cloud"
