@@ -143,11 +143,23 @@ export function DayView({ board, date, actions }) {
             aria-controls="missed-tasks"
             onClick={() => setMissedOpen(!missedOpen)}
           >
-            <span>Missade</span>
+            <span className="section-title">Missade</span>
             <span className="pill warn">{misses.length}</span>
-            <span className="disclosure-arrow" aria-hidden="true">
-              {missedOpen ? "⌄" : "›"}
-            </span>
+            <svg
+              className="disclosure-arrow"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                d="m6 9 6 6 6-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
           {missedOpen && (
             <div id="missed-tasks">

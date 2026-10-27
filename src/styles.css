@@ -77,8 +77,11 @@ h1 {
 h2 {
   font-size: 29px;
 }
-h3 {
+h3,
+.section-title {
   font-size: 19px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 button,
 input,
@@ -624,12 +627,31 @@ fieldset:disabled {
   color: var(--ink);
   text-align: left;
 }
+.disclosure:hover,
+.disclosure:active {
+  background: transparent;
+  color: var(--ink);
+}
+.disclosure:focus {
+  outline-color: var(--ink);
+}
+.disclosure:focus:not(:focus-visible) {
+  outline: none;
+}
 .disclosure .pill {
   margin-left: var(--space-3);
 }
 .disclosure-arrow {
+  display: block;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
   margin-left: auto;
-  font-size: 24px;
+  transform-origin: center;
+  transition: transform 180ms ease;
+}
+.disclosure[aria-expanded="true"] .disclosure-arrow {
+  transform: rotate(180deg);
 }
 /* Menus and calendar popovers share the floating surface. */
 .menuwrap,
@@ -1075,6 +1097,9 @@ summary {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .disclosure-arrow {
+    transition: none;
+  }
   * {
     scroll-behavior: auto;
   }
